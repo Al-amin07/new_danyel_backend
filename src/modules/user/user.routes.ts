@@ -11,31 +11,31 @@ userRoutes.post('/createUser', userController.createUser);
 
 userRoutes.patch(
   '/updateProfileData',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.company, userRole.driver),
   userController.updateProfileData,
 );
 userRoutes.delete(
   '/selfDistuct',
-  auth(userRole.user),
+  auth(userRole.admin, userRole.company, userRole.driver),
   userController.selfDistuct,
 );
 userRoutes.post(
   '/uploadOrChangeImg',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.company, userRole.driver),
   upload.single('files'),
   userController.uploadOrChangeImg,
 );
 
 userRoutes.get(
   '/getProfile',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.company, userRole.driver),
   userController.getProfile,
 );
 
 // admin routes
 userRoutes.get(
   '/getAlluser',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.company, userRole.driver),
   userController.getAllUsers,
 );
 userRoutes.delete(

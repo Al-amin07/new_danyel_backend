@@ -6,14 +6,9 @@ export type TUser={
     phone:string,
     email:string,
     password:string,
-    confirmPassword:string,
-    aggriedToTerms:boolean,
     role?:TUserRole,
     isDeleted?:string,
     isBlocked?:boolean,
-    isLoggedIn?:boolean,
-    loggedOutTime?:Date
-    passwordChangeTime?:Date
 }
 
 export type TProfile={

@@ -8,14 +8,14 @@ import { userRole } from '../../constents';
 const authRouter = express.Router();
 
 authRouter.post('/logIn', validator(logInValidator), authController.logIn);
-authRouter.post(
-  '/logOut',
-  auth(userRole.admin, userRole.user),
-  authController.logOut,
-);
+// authRouter.post(
+//   '/logOut',
+//   auth(userRole.admin, userRole.user),
+//   authController.logOut,
+// );
 authRouter.post(
   '/changePassword',
-  auth(userRole.admin, userRole.user),
+  auth(userRole.admin, userRole.company, userRole.driver),
   authController.changePassword,
 );
 

@@ -150,24 +150,6 @@ const refreshToken = async (refreshToken: string) => {
     throw Error('Unauthorised User or forbitten Access');
   }
 
-  // console.log(findUser)
-  if ((findUser.passwordChangeTime || findUser.loggedOutTime) && iat) {
-    const passwordChangedAt = findUser.passwordChangeTime
-      ? new Date(findUser.passwordChangeTime).getTime() / 1000
-      : null;
-
-    const logOutTimedAt = findUser.loggedOutTime
-      ? new Date(findUser.loggedOutTime).getTime() / 1000
-      : null;
-
-    if (
-      (passwordChangedAt && passwordChangedAt > iat) ||
-      (logOutTimedAt && logOutTimedAt > iat)
-    ) {
-      throw Error('Unauthorized User: Try logging in again');
-    }
-  }
-
   const JwtPayload = {
     id: findUser.id,
     role: role,

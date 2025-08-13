@@ -1,8 +1,9 @@
-export type TUserRole = 'admin' | 'user';
+export type TUserRole = 'admin' | 'company' | 'driver';
 
 export const userRole = {
-  user: 'user',
   admin: 'admin',
+  company: 'company',
+  driver: 'driver',
 } as const;
 
 export type TErrorSource = {
