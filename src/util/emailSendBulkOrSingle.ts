@@ -1,6 +1,5 @@
-import { UserModel } from "../modules/user/user.model";
-import { sendEmail } from "./sendEmail";
-
+import { User } from '../modules/user/user.model';
+import { sendEmail } from './sendEmail';
 
 const emailSendBulkOrSingle = async (
   sendToList: string[] | 'all' | string,
@@ -9,7 +8,7 @@ const emailSendBulkOrSingle = async (
 ) => {
   if (sendToList === 'all') {
     // Fetch all active and approved users who are not deleted
-    const allEmails = await UserModel.find(
+    const allEmails = await User.find(
       {
         isDeleted: false,
         requestState: 'approved',

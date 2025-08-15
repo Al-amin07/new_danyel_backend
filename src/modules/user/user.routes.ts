@@ -7,7 +7,7 @@ import { upload } from '../../util/uploadImgToCloudinary';
 const userRoutes = express.Router();
 
 // users routes
-userRoutes.post('/createUser', userController.createUser);
+userRoutes.post('/create', userController.createUser);
 
 userRoutes.patch(
   '/updateProfileData',

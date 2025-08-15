@@ -7,7 +7,7 @@ import { userRole } from '../../constents';
 
 const authRouter = express.Router();
 
-authRouter.post('/logIn', validator(logInValidator), authController.logIn);
+authRouter.post('/login', validator(logInValidator), authController.logIn);
 // authRouter.post(
 //   '/logOut',
 //   auth(userRole.admin, userRole.user),

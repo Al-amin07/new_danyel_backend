@@ -1,20 +1,21 @@
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import authUtill from './auth.utill';
-import { UserModel } from '../user/user.model';
+import { User } from '../user/user.model';
 import idConverter from '../../util/idConvirter';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { sendEmail } from '../../util/sendEmail';
 
 const logIn = async (email: string, password: string) => {
-  const user = await UserModel.findOne({ email }).select('+password');
-
+  const user = await User.findOne({ email }).select('+password');
 
   if (!user) {
     throw new Error('No user found with this email');
   }
 
-  if (user?.isBlocked || user?.isDeleted || !user) {}
+  if (user?.isBlocked || user?.isDeleted || !user) {
+    throw new Error('');
+  }
 
   // Deny login for blocked/deleted users for normal email login
   if (user.isBlocked || user.isDeleted) {
@@ -27,19 +28,19 @@ const logIn = async (email: string, password: string) => {
     throw new Error('Wrong password!!');
   }
 
-  const updatedUser = await UserModel.findOneAndUpdate(
+  const updatedUser = await User.findOneAndUpdate(
     { email },
     { isLoggedIn: true },
     { new: true },
   );
 
   const tokenizeData = {
-    id: user._id.toHexString(),
+    id: user._id,
     role: user.role,
     username: updatedUser?.name,
   };
 
-  const approvalToken = authUtill.createToken(
+  const accessToken = authUtill.createToken(
     tokenizeData,
     config.jwt_token_secret,
     config.token_expairsIn,
@@ -51,13 +52,13 @@ const logIn = async (email: string, password: string) => {
     config.rifresh_expairsIn,
   );
 
-  return { approvalToken, refreshToken, updatedUser };
+  return { accessToken, refreshToken };
 };
 
 const logOut = async (userId: string) => {
   const convertedId = idConverter(userId);
 
-  const findUserById = await UserModel.findOneAndUpdate(
+  const findUserById = await User.findOneAndUpdate(
     { _id: convertedId },
     { isLoggedIn: false, loggedOutTime: new Date() },
     { new: true },
@@ -84,7 +85,7 @@ const changePassword = async (
     const userId = decoded.id;
 
     // Find the user and include the password field
-    const findUser = await UserModel.findOne({ _id: userId })
+    const findUser = await User.findOne({ _id: userId })
       .select('+password')
       .lean(); // Convert to a plain object for performance
 
@@ -109,7 +110,7 @@ const changePassword = async (
     );
 
     // Update the password
-    const updatedUser = await UserModel.findOneAndUpdate(
+    const updatedUser = await User.findOneAndUpdate(
       { _id: userId },
       {
         password: newPasswordHash,
@@ -141,7 +142,7 @@ const refreshToken = async (refreshToken: string) => {
 
   const { id, iat, role } = decoded as JwtPayload;
 
-  const findUser = await UserModel.findOne({
+  const findUser = await User.findOne({
     _id: id,
     isDelited: false,
   });
@@ -166,7 +167,7 @@ const refreshToken = async (refreshToken: string) => {
 };
 
 const forgetPassword = async (email: string) => {
-  const user = await UserModel.findOne({ email });
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new Error('User not found with this email');
@@ -243,7 +244,7 @@ const resetPassword = async (
   const { id } = decoded;
   if (id === userId) {
     // Find the user and include the password field
-    const findUser = await UserModel.findOne({ _id: id }).select('+password');
+    const findUser = await User.findOne({ _id: id }).select('+password');
 
     if (!findUser || !findUser.password) {
       throw Error('User not found or password missing');
@@ -256,7 +257,7 @@ const resetPassword = async (
     );
 
     // Update the user's password and passwordChangeTime
-    const updatePassword = await UserModel.findOneAndUpdate(
+    const updatePassword = await User.findOneAndUpdate(
       { _id: id },
       {
         password: newPasswordHash,
@@ -276,7 +277,7 @@ const resetPassword = async (
 };
 
 const collectProfileData = async (id: string) => {
-  const result = await UserModel.findOne({ _id: id });
+  const result = await User.findOne({ _id: id });
   return result;
 };
 

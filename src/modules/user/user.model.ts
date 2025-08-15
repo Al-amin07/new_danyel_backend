@@ -6,16 +6,18 @@ import { userRole } from '../../constents';
 const UserSchema = new Schema<TUser>(
   {
     name: { type: String, required: true },
-    phone: { type: String, required: true, unique: false },
-    email: { type: String, required: true, unique: false },
-    password: { type: String, required: false },
+    phone: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
     role: {
       type: String,
       enum: ['admin', 'company', 'driver'],
-      default: userRole.driver,
+      required: true,
+      default: userRole.company,
     },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
+    isProfileUpdate: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
@@ -57,5 +59,5 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
-export const UserModel = mongoose.model('UserCollection', UserSchema);
-export const ProfileModel = model('Profile', ProfileSchema);
+export const User = mongoose.model('User', UserSchema);
+export const Profile = model('Profile', ProfileSchema);

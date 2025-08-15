@@ -1,64 +1,40 @@
-import mongoose from "mongoose";
-import app from "./app";
-import { Server } from "http";
-import adminSeeder from "./seeder/adminSeeder";
-import config from "./config";
+import mongoose from 'mongoose';
+import app from './app';
+import { Server } from 'http';
+// import adminSeeder from './seeder/adminSeeder';
+import config from './config';
 
 let server: Server;
 
 async function main() {
   try {
-    console.log("connecting to mongodb....⏳");
-    await mongoose.connect(config.mongoose_uri);
-    await adminSeeder()
+    console.log('Connecting to MongoDB... ⏳');
+    await mongoose.connect(config.mongoose_uri, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log('✅ MongoDB connected!');
+
+    // await adminSeeder();
+
     server = app.listen(config.port, () => {
       console.log(`APP NAME server app listening on port ${config.port}`);
     });
-  } 
-  catch (err:any) {
-    throw Error('something went wrong in server or mongoose connection');
+  } catch (err: any) {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
   }
 }
+
 main();
 
-// Global unhandled promise rejection handler
 process.on('unhandledRejection', async (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Gracefully shutting down the server
-  if (server) {
-    try {
-      server.close(() => {
-        console.log(
-          'Server and MongoDB connection closed due to unhandled rejection.',
-        );
-        process.exit(1); // Exit the process with an error code
-      });
-    } catch (err) {
-      console.error('Error during shutdown:', err);
-      process.exit(1); // Exit with error code if shutting down fails
-    }
-  } else {
-    process.exit(1);
-  }
+  console.error('Unhandled Rejection:', reason);
+  if (server) server.close(() => process.exit(1));
+  else process.exit(1);
 });
 
-// Global uncaught exception handler
 process.on('uncaughtException', async (err) => {
   console.error('Uncaught Exception:', err);
-  // Gracefully shutting down the server
-  if (server) {
-    try {
-      server.close(() => {
-        console.log(
-          'Server and MongoDB connection closed due to uncaught exception.',
-        );
-        process.exit(1); // Exit the process with an error code
-      });
-    } catch (err) {
-      console.error('Error during shutdown:', err);
-      process.exit(1); // Exit with error code if shutting down fails
-    }
-  } else {
-    process.exit(1);
-  }
+  if (server) server.close(() => process.exit(1));
+  else process.exit(1);
 });
