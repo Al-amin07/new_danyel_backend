@@ -10,6 +10,7 @@ export type TUser = {
   isDeleted?: string;
   isBlocked?: boolean;
   isProfileUpdate?: boolean;
+  company?: Types.ObjectId;
 };
 
 export type TProfile = {
