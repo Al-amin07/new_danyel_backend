@@ -1,81 +1,116 @@
 import multer from "multer";
 import path from "path";
-import { v2 as cloudinary } from "cloudinary";
 import fs from "fs/promises";
+import { v2 as cloudinary } from "cloudinary";
 import config from "../config";
 
-// Function to delete a file from the local filesystem
+// -----------------------------
+// 1. Cloudinary Config (One-time)
+// -----------------------------
+cloudinary.config({
+  cloud_name: config.cloudinary_name,
+  api_key: config.cloudinary_api_key,
+  api_secret: config.cloudinary_api_secret,
+});
+
+// -----------------------------
+// 2. Helper: Delete Local File
+// -----------------------------
 const deleteFile = async (filePath: string) => {
   try {
     await fs.unlink(filePath);
-    console.log(`File deleted successfully: ${filePath}`);
-  } catch (err: any) {
-    console.error(`Error deleting file: ${err.message}`);
+  } catch (err) {
+    console.error(
+      `Error deleting file: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 };
 
-// Function to upload an image to Cloudinary
-export const uploadImgToCloudinary = async (name: string, filePath: string) => {
-  // Configuration for Cloudinary
-  cloudinary.config({
-    cloud_name: config.cloudinary_name,
-    api_key: config.cloudinary_api_key,
-    api_secret: config.cloudinary_api_secret,
-  });
-
+// -----------------------------
+// 3. Upload Single File
+// -----------------------------
+export const uploadToCloudinary = async (
+  filePath: string,
+  folder: string = "uploads"
+) => {
   try {
-    // Upload an image to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(filePath, {
-      public_id: name,
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder,
+      resource_type: "auto", // auto handles images + docs (pdf, doc, etc.)
     });
 
-    // Log the upload result
-    console.log("Upload result:", uploadResult);
-
-    // Delete the file from the local filesystem after uploading it to Cloudinary
     await deleteFile(filePath);
 
-    // Return the upload result
-    return uploadResult;
+    return result; // Return full response (secure_url, public_id, etc.)
   } catch (error) {
-    console.error("Error uploading image to Cloudinary:", error);
-    throw new Error("Image upload failed");
+    console.error("Cloudinary upload error:", error);
+    throw new Error("File upload failed");
   }
 };
 
-// Function to handle multiple image uploads
-export const uploadMultipleImages = async (filePaths: string[]) => {
+// -----------------------------
+// 4. Upload Multiple Files
+// -----------------------------
+export const uploadMultipleToCloudinary = async (
+  filePaths: string[],
+  folder: string = "uploads"
+) => {
   try {
-    // Initialize an array to store the image URLs
-    const imageUrls: string[] = [];
-
-    // Loop through the file paths and upload each one
+    const results = [];
     for (const filePath of filePaths) {
-      const imageName = `${Math.floor(
-        100 + Math.random() * 900
-      )}-${Date.now()}`; // Unique image name
-      const uploadResult = await uploadImgToCloudinary(imageName, filePath);
-      imageUrls.push(uploadResult.secure_url); // Store the secure URL of the uploaded image
+      const result = await uploadToCloudinary(filePath, folder);
+      results.push(result);
     }
-
-    // Return the array of image URLs
-    return imageUrls;
+    return results;
   } catch (error) {
-    console.error("Error uploading multiple images:", error);
-    throw new Error("Multiple image upload failed");
+    console.error("Error uploading multiple files:", error);
+    throw new Error("Multiple file upload failed");
   }
 };
 
-// Multer storage configuration for local file saving
+// -----------------------------
+// 5. Multer Storage Config
+// -----------------------------
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(process.cwd(), "uploads")); // Define folder for temporary file storage
+  destination: async (req, file, cb) => {
+    const uploadPath = path.join(process.cwd(), "uploads");
+    await fs.mkdir(uploadPath, { recursive: true }); // Ensure folder exists
+    cb(null, uploadPath);
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix); // Generate unique file name
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+    );
   },
 });
 
-// Multer upload setup
-export const upload = multer({ storage: storage });
+// -----------------------------
+// 6. Multer File Filter (Security)
+// -----------------------------
+const fileFilter = (
+  req: any,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  const allowedMimes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Invalid file type"));
+  }
+};
+
+// -----------------------------
+// 7. Final Multer Export
+// -----------------------------
+export const upload = multer({ storage, fileFilter });

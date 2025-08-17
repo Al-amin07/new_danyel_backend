@@ -67,35 +67,35 @@ const selfDistuct = catchAsync(async (req, res) => {
   });
 });
 
-const uploadOrChangeImg = catchAsync(async (req, res) => {
-  const actionType = req.query.actionType as string; // Fixed typo in `actionType`
-  const user_id = req.user.id;
-  const imgFile = req.file;
+// const uploadOrChangeImg = catchAsync(async (req, res) => {
+//   const actionType = req.query.actionType as string; // Fixed typo in `actionType`
+//   const user_id = req.user.id;
+//   const imgFile = req.file;
 
-  if (!user_id || !imgFile) {
-    throw new Error('User ID and image file are required.');
-  }
+//   if (!user_id || !imgFile) {
+//     throw new Error('User ID and image file are required.');
+//   }
 
-  // Ensure `idConverter` returns only the ObjectId
-  const userIdConverted = idConverter(user_id);
-  if (!(userIdConverted instanceof Types.ObjectId)) {
-    throw new Error('User ID conversion failed');
-  }
+//   // Ensure `idConverter` returns only the ObjectId
+//   const userIdConverted = idConverter(user_id);
+//   if (!(userIdConverted instanceof Types.ObjectId)) {
+//     throw new Error('User ID conversion failed');
+//   }
 
-  // Call the service function to handle the upload
-  const result = await userServices.uploadOrChangeImg(
-    userIdConverted,
-    imgFile as Express.Multer.File,
-  );
+//   // Call the service function to handle the upload
+//   const result = await userServices.uploadOrChangeImg(
+//     userIdConverted,
+//     imgFile as Express.Multer.File,
+//   );
 
-  // Send response
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: `Your profile picture has been ${actionType || 'updated'}`,
-    data: result,
-  });
-});
+//   // Send response
+//   sendResponse(res, {
+//     statusCode: 200,
+//     success: true,
+//     message: `Your profile picture has been ${actionType || 'updated'}`,
+//     data: result,
+//   });
+// });
 
 const getProfile = catchAsync(async (req, res) => {
   const user_id = req.user.id;
@@ -119,7 +119,7 @@ const userController = {
   updateProfileData,
   deleteSingleUser,
   selfDistuct,
-  uploadOrChangeImg,
+  // uploadOrChangeImg,
   getProfile,
 };
 
