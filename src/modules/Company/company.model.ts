@@ -11,6 +11,7 @@ const CompanySchema = new Schema<ICompany>(
     },
     companyName: { type: String, required: true },
     companyAddress: { type: String },
+    numberOfEmployee: { type: Number },
   },
   { timestamps: true },
 );
