@@ -5,5 +5,5 @@ export interface IDriver extends Document {
   licenseNumber: string;
   vehicleType: string;
   vehiclePlate: string;
-  company: Types.ObjectId; // Company this driver belongs to
+  companyId: Types.ObjectId; // Company this driver belongs to
 }

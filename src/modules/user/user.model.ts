@@ -18,7 +18,7 @@ const UserSchema = new Schema<TUser>(
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     isProfileUpdate: { type: Boolean, default: false },
-    company: {type: Schema.Types.ObjectId, ref: 'User'}
+    company: { type: Schema.Types.ObjectId, ref: 'User' }
   },
   { timestamps: true },
 );

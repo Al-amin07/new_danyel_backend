@@ -1,9 +1,11 @@
 import mongoose, { ClientSession, Types } from 'mongoose';
+import bcrypt from 'bcrypt';
 import { TProfile, TUser } from './user.interface';
 import { Profile, User } from './user.model';
 import { uploadImgToCloudinary } from '../../util/uploadImgToCloudinary';
+import { IDriver } from '../Driver/driver.interface';
 
-const createUser = async (payload: Partial<TUser>, method?: string) => {
+const createUser = async (payload: Partial<TUser>) => {
   if (!payload) {
     throw new Error('User info not found!!');
   }
@@ -18,20 +20,66 @@ const createUser = async (payload: Partial<TUser>, method?: string) => {
     throw new Error('This user already exist!');
   }
 
-  // const session: ClientSession = await mongoose.startSession();
   try {
-    const newUser = await User.create(payload);
+    const { name, email, phone, password, role, ...extra } = payload;
 
-    const safeUser = await User.findById(newUser._id).select(
-      '-password -secretKey',
-    );
+    // hash password
+    if (!password) {
+      throw new Error('Password is required');
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    return safeUser;
-  } catch (error) {
-    console.error('Error creating user:', error);
-    throw error;
-  } finally {
-    // session.endSession();
+    // Step 1: create User
+    let user;
+
+    if (role === "driver") {
+
+      if (!(extra as IDriver).companyId) {
+        throw new Error("companyId is required for drivers");
+      }
+
+      user = await User.create({
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        role,
+        company: (extra as IDriver).companyId,
+      });
+    } else if (role === "admin" || role === "company") {
+      user = await User.create({
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        role,
+      });
+    }
+
+
+    // Step 2: create role-specific document
+
+    // if (role === "company") {
+    //   roleDoc = await Company.create({
+    //     user: user._id,
+    //     companyName: (extra as ICompany).companyName,
+    //     companyAddress: (extra as ICompany).companyAddress,
+    //   });
+    // }
+
+
+    // if (role === "admin") {
+    //   roleDoc = await Admin.create({
+    //     user: user._id,
+    //     superAdmin: extra.superAdmin || false,
+    //   });
+    // }
+
+    const newCreatedUser = await User.findOne({ email }).select("-password")
+
+    return { success: true, newCreatedUser };
+  } catch (err: any) {
+    return { success: false, message: err.message };
   }
 };
 

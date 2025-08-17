@@ -12,7 +12,7 @@ const DriverSchema = new Schema<IDriver>(
     licenseNumber: { type: String, required: true },
     vehicleType: { type: String, required: true },
     vehiclePlate: { type: String, required: true },
-    company: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
   },
   { timestamps: true },
 );
