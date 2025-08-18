@@ -2,7 +2,7 @@ import mongoose, { ClientSession, Types } from 'mongoose';
 import bcrypt from 'bcrypt';
 import { TProfile, TUser } from './user.interface';
 import { Profile, User } from './user.model';
-import { uploadImgToCloudinary } from '../../util/uploadImgToCloudinary';
+// import { uploadImgToCloudinary } from '../../util/uploadImgToCloudinary';
 import { IDriver } from '../Driver/driver.interface';
 
 const createUser = async (payload: Partial<TUser>) => {
@@ -134,36 +134,36 @@ const selfDistuct = async (user_id: Types.ObjectId) => {
   return result;
 };
 
-const uploadOrChangeImg = async (
-  user_id: Types.ObjectId,
-  imgFile: Express.Multer.File,
-) => {
-  if (!user_id || !imgFile) {
-    throw new Error('User ID and image file are required.');
-  }
+// const uploadOrChangeImg = async (
+//   user_id: Types.ObjectId,
+//   imgFile: Express.Multer.File,
+// ) => {
+//   if (!user_id || !imgFile) {
+//     throw new Error('User ID and image file are required.');
+//   }
 
-  // Upload new image to Cloudinary
-  const result = await uploadImgToCloudinary(imgFile.filename, imgFile.path);
+//   // Upload new image to Cloudinary
+//   const result = await uploadImgToCloudinary(imgFile.filename, imgFile.path);
 
-  console.log(result);
+//   console.log(result);
 
-  if (!result.secure_url) {
-    throw new Error('Image upload failed.');
-  }
+//   if (!result.secure_url) {
+//     throw new Error('Image upload failed.');
+//   }
 
-  // Update user profile with new image URL
-  const updatedUserProfile = await Profile.findOneAndUpdate(
-    { user_id }, // Corrected query (find by user_id, not _id)
-    { img: result.secure_url },
-    { new: true },
-  );
+//   // Update user profile with new image URL
+//   const updatedUserProfile = await Profile.findOneAndUpdate(
+//     { user_id }, // Corrected query (find by user_id, not _id)
+//     { img: result.secure_url },
+//     { new: true },
+//   );
 
-  if (!updatedUserProfile) {
-    throw new Error('Profile not found or update failed.');
-  }
+//   if (!updatedUserProfile) {
+//     throw new Error('Profile not found or update failed.');
+//   }
 
-  return updatedUserProfile;
-};
+//   return updatedUserProfile;
+// };
 
 const getProfile = async (user_id: Types.ObjectId) => {
   const profile = await Profile.findOne({ user_id });
@@ -177,7 +177,7 @@ const userServices = {
   updateProfileData,
   deleteSingleUser,
   selfDistuct,
-  uploadOrChangeImg,
+  // uploadOrChangeImg,
   getProfile,
 };
 

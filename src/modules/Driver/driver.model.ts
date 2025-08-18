@@ -9,10 +9,27 @@ const DriverSchema = new Schema<IDriver>(
       required: true,
       unique: true,
     },
-    licenseNumber: { type: String, required: true },
-    vehicleType: { type: String, required: true },
-    vehiclePlate: { type: String, required: true },
-    companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
+    licenseNumber: { type: String },
+    vehicleType: { type: String },
+    vehiclePlate: { type: String },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company' },
+
+    // Optional fields for profile update
+    nidOrPassport: {
+      secure_url: { type: String },
+      public_id: { type: String },
+    },
+    drivingLicense: {
+      secure_url: { type: String },
+      public_id: { type: String },
+    },
+    vehicleRegistration: {
+      secure_url: { type: String },
+      public_id: { type: String },
+    },
+
+    experience: { type: Number },
+    otherInfo: { type: String }, // for any extra info
   },
   { timestamps: true },
 );

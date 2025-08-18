@@ -2,7 +2,7 @@ import express from 'express';
 import userController from './user.controller';
 import { userRole } from '../../constents';
 import auth from '../../middleware/auth';
-import { upload } from '../../util/uploadImgToCloudinary';
+// import { upload } from '../../util/uploadImgToCloudinary';
 
 const userRoutes = express.Router();
 
@@ -19,12 +19,12 @@ userRoutes.delete(
   auth(userRole.admin, userRole.company, userRole.driver),
   userController.selfDistuct,
 );
-userRoutes.post(
-  '/uploadOrChangeImg',
-  auth(userRole.admin, userRole.company, userRole.driver),
-  upload.single('files'),
-  userController.uploadOrChangeImg,
-);
+// userRoutes.post(
+//   '/uploadOrChangeImg',
+//   auth(userRole.admin, userRole.company, userRole.driver),
+//   upload.single('files'),
+//   userController.uploadOrChangeImg,
+// );
 
 userRoutes.get(
   '/getProfile',
