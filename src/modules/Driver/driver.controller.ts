@@ -4,8 +4,6 @@ import { driverService } from "./driver.service";
 import { JwtPayload } from "jsonwebtoken";
 
 
-
-
 const updateDriverProfile = catchAsync(async (req: Request, res: Response) => {
     try {
         const id = (req.user as JwtPayload).id;
