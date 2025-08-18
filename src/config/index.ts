@@ -5,6 +5,7 @@ dotenv.config({path:path.join(process.cwd(),".env")})
 const config={
     FrontEndHostedPort:process.env.FRONT_END_HOSTED_PORT as string,
     port: process.env.PORT ? Number(process.env.PORT) : 4000,
+    server_url: process.env.SERVER_URL,
     nodeEnv:process.env.NODE_ENV,
     mongoose_uri:process.env.MONGOOSE_URI as string,
 
