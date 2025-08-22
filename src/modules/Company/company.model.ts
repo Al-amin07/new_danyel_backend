@@ -1,33 +1,50 @@
-import { model, Schema } from "mongoose";
-import { ICompany } from "./company.interface";
+import { ICompany } from './company.interface';
+import { model, Schema } from 'mongoose';
 
-const companySchema = new Schema<ICompany>(
+const CompanySchema = new Schema<ICompany>(
   {
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
     companyName: { type: String, required: true },
     companyAddress: { type: String },
+    password: { type: String, required: true },
     numberOfEmployees: { type: Number },
+    startOperationHour: { type: String },
+    endOperationHour: { type: String },
 
-    // Business hours
-    startOperationHour: { type: String }, // e.g., "09:00"
-    endOperationHour: { type: String },   // e.g., "18:00"
+    paymentTerms: {
+      type: String,
+      enum: ['perMile', 'perKilo'],
+      default: 'perMile',
+    },
 
-    paymentTerms: { type: String, enum: ["perMile", "perKilo"] },
+    address: {
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      zipCode: { type: String },
+      country: { type: String },
+    },
 
-    // Address fields
-    streetAddress: { type: String },
-    city: { type: String },
-    state: { type: String },
-    zipCode: { type: String },
-    country: { type: String },
+    notificationPreferences: {
+      email: { type: Boolean, default: true },
+      sms: { type: Boolean, default: false },
+      push: { type: Boolean, default: false },
+      loadAssignment: { type: Boolean, default: true },
+      driverStatusUpdate: { type: Boolean, default: true },
+      pendingPayment: { type: Boolean, default: true },
+      securityAlert: { type: Boolean, default: true },
+    },
 
-    // Preferences
-    languagePreference: { type: String },
-    timeZone: { type: String },
-    currency: { type: String },
-    dateFormat: { type: String }, // stored as string (like "MM/DD/YYYY")
+    languagePreference: { type: String, default: 'en' },
+    timeZone: { type: String, default: 'UTC' },
+    currency: { type: String, default: 'USD' },
+    dateFormat: { type: String, default: 'MM/DD/YYYY' },
+    loads: [{ type: Schema.Types.ObjectId, ref: 'Load' }],
+    drivers: [{ type: Schema.Types.ObjectId, ref: 'Driver' }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const Company = model<ICompany>("Company", companySchema);
+export const Company = model<ICompany>('Company', CompanySchema);

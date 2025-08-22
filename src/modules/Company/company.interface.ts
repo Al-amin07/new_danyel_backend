@@ -1,28 +1,46 @@
-import { Types } from "mongoose";
+import { Types } from 'mongoose';
+import { TUser } from '../user/user.interface';
 
 export interface ICompany extends Document {
   user: Types.ObjectId; // Reference to User
+  name: string;
+  email: string;
   companyName: string;
   companyAddress?: string;
+  password: string;
   numberOfEmployees?: number;
-
-  // Business hours (better as string in "HH:mm" format)
   startOperationHour?: string;
   endOperationHour?: string;
 
   paymentTerms?: 'perMile' | 'perKilo';
 
   // Address fields
-  streetAddress?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string; // might be useful
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+  };
+
+  notificationPreferences: {
+    email: boolean;
+    sms: boolean;
+    push?: boolean;
+    loadAssignment: boolean;
+    driverStatusUpdate: boolean;
+    pendingPayment: boolean;
+    securityAlert: boolean;
+  };
 
   // Preferences
   languagePreference?: string;
   timeZone?: string;
   currency?: string;
   dateFormat?: string; // e.g., "MM/DD/YYYY"
+
+  loads: Types.ObjectId[];
+  drivers: Types.ObjectId[];
 }
 
+export type TCompanyUser = TUser & ICompany;
