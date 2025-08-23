@@ -3,11 +3,10 @@ import { TUser } from '../user/user.interface';
 
 export interface ICompany extends Document {
   user: Types.ObjectId; // Reference to User
-  name: string;
-  email: string;
+
   companyName: string;
   companyAddress?: string;
-  password: string;
+
   numberOfEmployees?: number;
   startOperationHour?: string;
   endOperationHour?: string;

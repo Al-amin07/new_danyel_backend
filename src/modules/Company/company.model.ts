@@ -4,11 +4,8 @@ import { model, Schema } from 'mongoose';
 const CompanySchema = new Schema<ICompany>(
   {
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
     companyName: { type: String, required: true },
     companyAddress: { type: String },
-    password: { type: String, required: true },
     numberOfEmployees: { type: Number },
     startOperationHour: { type: String },
     endOperationHour: { type: String },

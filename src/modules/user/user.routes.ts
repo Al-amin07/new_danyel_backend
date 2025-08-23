@@ -8,6 +8,9 @@ const userRoutes = express.Router();
 
 // users routes
 userRoutes.post('/create-company', userController.createCompany);
+userRoutes.post('/create-driver', userController.createDriver);
+userRoutes.post('/send-otp', userController.sendVerifyOtpAgain);
+userRoutes.post('/verify-otp', userController.verifyOtp);
 
 // userRoutes.patch(
 //   '/updateProfileData',

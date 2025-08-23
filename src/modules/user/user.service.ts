@@ -1,12 +1,18 @@
-import mongoose, { ClientSession, Types } from 'mongoose';
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import { TUser } from './user.interface';
 import { User } from './user.model';
 // import { uploadImgToCloudinary } from '../../util/uploadImgToCloudinary';
-import { ICompany, TCompanyUser } from '../Company/company.interface';
+import { TCompanyUser } from '../Company/company.interface';
 import ApppError from '../../error/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { Company } from '../Company/company.model';
+import { TDriverUser } from '../Driver/driver.interface';
+import { Driver } from '../Driver/driver.model';
+import { sendEmail } from '../../util/sendEmail';
+import generateOTPEmail from '../../util/generateOtpEmail';
+import authUtil from '../auth/auth.utill';
+import config from '../../config';
+import { generateOtp } from '../../util/generateOtp';
 
 const createCompanyToDB = async (payload: TCompanyUser) => {
   if (!payload) {
@@ -28,25 +34,24 @@ const createCompanyToDB = async (payload: TCompanyUser) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
+  const otp = generateOtp();
   const userInfo = {
     name,
     email,
     phone,
     password: hashedPassword,
-    role,
+    role: 'company',
+    emailVerificationCode: otp,
+    emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
   };
+  console.log({ userInfo });
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     const result = await User.create([userInfo], { session });
-
+    console.log({ result });
     const companyInfo = {
       user: result[0]?._id,
-      name,
-      email,
-      password: result[0]?.password,
-      phone,
       companyName: extra?.companyName || '',
       companyAddress: extra?.companyAddress || '',
       numberOfEmployees: extra?.numberOfEmployees || 0,
@@ -60,11 +65,15 @@ const createCompanyToDB = async (payload: TCompanyUser) => {
       currency: extra?.currency,
       dateFormat: extra?.dateFormat,
     };
-
     await Company.create([companyInfo], { session });
-
     await session.commitTransaction();
     session.endSession();
+    const sendEmailTo = await sendEmail(
+      email,
+      'Your verification code',
+      generateOTPEmail(otp, name),
+    );
+    console.log({ sendEmailTo });
     return result[0];
   } catch (error) {
     // Rollback transaction
@@ -74,9 +83,146 @@ const createCompanyToDB = async (payload: TCompanyUser) => {
   }
 };
 
+const createDriverToDB = async (payload: TDriverUser) => {
+  const { name, email, password, phone, ...driverData } = payload;
+  console.log({ name, email, password, phone });
+  const isUserExist = await User.findOne({ email }).select('+password');
+  if (isUserExist) {
+    throw new ApppError(StatusCodes.CONFLICT, 'This user already exist!');
+  }
+  if (!password) {
+    throw new Error('Password is required');
+  }
+  const otp = generateOtp();
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const userInfo = {
+    name,
+    email,
+    phone,
+    password: hashedPassword,
+    role: 'driver',
+    emailVerificationCode: otp,
+    emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
+  };
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const result = await User.create([userInfo], { session });
+    const { user, ...restDriverData } = driverData;
+    const driverInfo = {
+      user: result[0]?._id,
+      ...restDriverData,
+    };
+
+    await Driver.create([driverInfo], { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    const sendEmailTo = await sendEmail(
+      email,
+      'Your verification code',
+      generateOTPEmail(otp, name),
+    );
+    console.log({ sendEmailTo });
+    return result[0];
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+const sendVerifyEmailOtpAgain = async (email: string) => {
+  const isUserExist = await User.findOne({ email }).select('+password');
+  if (!isUserExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  if (isUserExist.isVerified) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'This email is already verified',
+    );
+  }
+  const otp = generateOtp();
+  const result = await User.findOneAndUpdate(
+    { email },
+    {
+      emailVerificationCode: otp,
+      emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
+    },
+    { new: true },
+  );
+  if (!result) {
+    throw new ApppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Operation failed');
+  }
+  const sendEmailTo = await sendEmail(
+    email,
+    'Your verification code',
+    generateOTPEmail(otp, result.name),
+  );
+  if (sendEmailTo.success === false) {
+    throw new ApppError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to send email',
+    );
+  }
+  return 'Verification email sent successfully';
+};
+
 const getAllUsers = async () => {
   const result = await User.find();
   return result;
+};
+
+const verifyOtp = async (email: string, otp: string) => {
+  const user = await User.findOne({ email }).lean();
+  if (!user) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  if (user.isVerified) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'This email is already verified',
+    );
+  }
+  if (user.emailVerificationCode !== otp) {
+    throw new ApppError(StatusCodes.UNAUTHORIZED, 'Invalid OTP');
+  }
+  if (
+    user.emailVerificationExpires &&
+    user.emailVerificationExpires < new Date()
+  ) {
+    throw new ApppError(StatusCodes.UNAUTHORIZED, 'OTP has expired');
+  }
+  user.isVerified = true;
+  user.emailVerificationCode = undefined;
+  user.emailVerificationExpires = undefined;
+  user.lastLoggedin = new Date();
+  const updatedUser = await User.findOneAndUpdate({ email }, user, {
+    new: true,
+  });
+
+  const tokenizeData = {
+    id: user._id,
+    role: user.role,
+    username: updatedUser?.name,
+    email: updatedUser?.email,
+  };
+
+  const accessToken = authUtil.createToken(
+    tokenizeData,
+    config.jwt_token_secret,
+    config.token_expairsIn,
+  );
+
+  const refreshToken = authUtil.createToken(
+    tokenizeData,
+    config.jwt_refresh_Token_secret,
+    config.rifresh_expairsIn,
+  );
+
+  return { accessToken, refreshToken, userData: updatedUser };
 };
 
 // const updateProfileData = async (
@@ -166,6 +312,9 @@ const getAllUsers = async () => {
 const userServices = {
   createCompanyToDB,
   getAllUsers,
+  createDriverToDB,
+  verifyOtp,
+  sendVerifyEmailOtpAgain,
   // updateProfileData,
   // deleteSingleUser,
   // selfDistuct,

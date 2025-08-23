@@ -18,6 +18,10 @@ const UserSchema = new Schema<TUser>(
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     isProfileUpdate: { type: Boolean, default: false },
+    emailVerificationCode: { type: String },
+    emailVerificationExpires: { type: Date },
+    lastLoggedin: { type: Date },
+    isVerified: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

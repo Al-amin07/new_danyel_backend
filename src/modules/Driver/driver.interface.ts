@@ -1,6 +1,7 @@
 import { Types, Document } from 'mongoose';
+import { TUser } from '../user/user.interface';
 
-interface ILocation {
+export interface ILocation {
   city: string;
   street: string;
   zipCode: string;
@@ -86,19 +87,17 @@ export interface IDriver extends Document {
   preferredDeliveryZones?: string[];
 
   // Optional fields for profile updates
-  nidOrPassport?: {
-    secure_url: string;
-    public_id: string;
-  };
-  drivingLicense?: {
-    secure_url: string;
-    public_id: string;
-  };
-  vehicleRegistration?: {
-    secure_url: string;
-    public_id: string;
-  };
+  nidOrPassport?: IFileType;
+  drivingLicense?: IFileType;
+  vehicleRegistration?: IFileType;
 
   experience?: number;
   otherInfo?: string; // any extra info
 }
+
+export interface IFileType {
+  secure_url: string;
+  type: string;
+}
+
+export type TDriverUser = TUser & IDriver;

@@ -5,39 +5,42 @@ import { User } from '../user/user.model';
 import idConverter from '../../util/idConvirter';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { sendEmail } from '../../util/sendEmail';
+import ApppError from '../../error/AppError';
+import { StatusCodes } from 'http-status-codes';
+import { TUser } from '../user/user.interface';
+import { Types } from 'mongoose';
 
-const logIn = async (email: string, password: string) => {
+const logIn = async (payload: { email: string; password: string }) => {
+  const { email, password } = payload;
   const user = await User.findOne({ email }).select('+password');
 
   if (!user) {
-    throw new Error('No user found with this email');
+    throw new ApppError(StatusCodes.NOT_FOUND, 'No user found with this email');
   }
 
-  if (user?.isBlocked || user?.isDeleted || !user) {
-    throw new Error('');
+  if (user?.isBlocked || user?.isDeleted) {
+    throw new ApppError(
+      StatusCodes.FORBIDDEN,
+      'This user is blocked or deleted',
+    );
   }
-
-  // Deny login for blocked/deleted users for normal email login
-  if (user.isBlocked || user.isDeleted) {
-    throw new Error('This user is blocked or deleted');
-  }
-
   // Password check for email login
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) {
-    throw new Error('Wrong password!!');
+  const isPasswordmatch = await bcrypt.compare(password, user.password);
+  if (!isPasswordmatch) {
+    throw new ApppError(StatusCodes.CONFLICT, 'Incorrect password!!');
   }
 
   const updatedUser = await User.findOneAndUpdate(
     { email },
-    { isLoggedIn: true },
+    { lastLoggedin: new Date() },
     { new: true },
-  );
+  ).select('-password');
 
   const tokenizeData = {
     id: user._id,
     role: user.role,
     username: updatedUser?.name,
+    email: updatedUser?.email,
   };
 
   const accessToken = authUtill.createToken(
@@ -52,7 +55,7 @@ const logIn = async (email: string, password: string) => {
     config.rifresh_expairsIn,
   );
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, userData: updatedUser };
 };
 
 const logOut = async (userId: string) => {
@@ -67,67 +70,50 @@ const logOut = async (userId: string) => {
 };
 
 const changePassword = async (
-  authorizationToken: string,
+  id: string,
   oldPassword: string,
   newPassword: string,
 ) => {
-  try {
-    // Decode the token
-    const decoded = jwt.verify(
-      authorizationToken,
-      config.jwt_token_secret as string,
-    ) as JwtPayload;
-
-    if (!decoded || !decoded.id) {
-      throw new Error('Invalid or unauthorized token');
-    }
-
-    const userId = decoded.id;
-
-    // Find the user and include the password field
-    const findUser = await User.findOne({ _id: userId })
-      .select('+password')
-      .lean(); // Convert to a plain object for performance
-
-    if (!findUser || !findUser.password) {
-      throw new Error('User not found or password missing');
-    }
-
-    // Compare old password with hashed password
-    const isPasswordMatch = await bcrypt.compare(
-      oldPassword,
-      findUser.password,
+  // Find the user and include the password field
+  const findUser = await User.findById(id).lean(); // Convert to a plain object for performance
+  console.log({ findUser, id });
+  if (!findUser || !findUser.password) {
+    throw new ApppError(
+      StatusCodes.NOT_FOUND,
+      'User not found or password missing',
     );
-
-    if (!isPasswordMatch) {
-      throw new Error('Old password is incorrect');
-    }
-
-    // Hash the new password
-    const newPasswordHash = await bcrypt.hash(
-      newPassword,
-      Number(config.bcrypt_salt),
-    );
-
-    // Update the password
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: userId },
-      {
-        password: newPasswordHash,
-        passwordChangeTime: new Date(),
-      },
-      { new: true },
-    );
-
-    if (!updatedUser) {
-      throw new Error('Error updating password');
-    }
-
-    return { success: true, message: 'Password changed successfully' };
-  } catch (error: any) {
-    console.error('Error changing password:', error.message);
-    throw new Error(error.message || 'Something went wrong');
   }
+
+  // Compare old password with hashed password
+  const isPasswordMatch = await bcrypt.compare(oldPassword, findUser.password);
+
+  if (!isPasswordMatch) {
+    throw new ApppError(StatusCodes.CONFLICT, 'Old password is incorrect');
+  }
+
+  // Hash the new password
+  const newPasswordHash = await bcrypt.hash(
+    newPassword,
+    Number(config.bcrypt_salt),
+  );
+
+  // Update the password
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    {
+      password: newPasswordHash,
+      passwordChangeTime: new Date(),
+    },
+    { new: true },
+  ).select('-password');
+
+  console.log({ updatedUser });
+
+  if (!updatedUser) {
+    throw new Error('Error updating password');
+  }
+
+  return updatedUser;
 };
 
 const refreshToken = async (refreshToken: string) => {
