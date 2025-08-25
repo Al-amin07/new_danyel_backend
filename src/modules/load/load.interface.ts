@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types } from 'mongoose';
 
 // Address Type
 export interface IAddress {
@@ -10,10 +10,17 @@ export interface IAddress {
   country: string;
 }
 
-
 export interface IDocument {
-  type: string;     
+  type: string;
   url: string;
+}
+
+enum ELoadStatus {
+  'Pending Assignment',
+  'In Transit',
+  'At Pickup',
+  'En Route to Pickup',
+  'Delivered',
 }
 
 export interface ILoad {
@@ -22,6 +29,13 @@ export interface ILoad {
   weight: number;
   loadType: string;
   specialInstructions?: string;
+
+  loadStatus:
+    | 'Pending Assignment'
+    | 'In Transit'
+    | 'At Pickup'
+    | 'En Route to Pickup'
+    | 'Delivered';
 
   pickupAddress: IAddress;
   deliveryAddress: IAddress;
@@ -35,12 +49,11 @@ export interface ILoad {
   ratePerMile: number;
   totalPayment: number;
 
-  paymentStatus: "PENDING" | "PAID" | "FAILED";
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
   customerNotes?: string;
   paymentDate?: Date;
 
   assignedDriver?: Types.ObjectId;
 
   documents: IDocument[];
-
 }

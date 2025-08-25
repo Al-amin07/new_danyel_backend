@@ -1,7 +1,5 @@
-import { Schema, model } from "mongoose";
-import { IAddress, IDocument, ILoad } from "./load.interface";
-
-
+import { Schema, model } from 'mongoose';
+import { IAddress, IDocument, ILoad } from './load.interface';
 
 const AddressSchema = new Schema<IAddress>({
   street: { type: String, required: true },
@@ -27,6 +25,17 @@ const LeadSchema = new Schema<ILoad>(
 
     pickupAddress: { type: AddressSchema, required: true },
     deliveryAddress: { type: AddressSchema, required: true },
+    loadStatus: {
+      type: String,
+      enum: [
+        'Pending Assignment',
+        'In Transit',
+        'At Pickup',
+        'En Route to Pickup',
+        'Delivered',
+      ],
+      default: 'Pending Assignment',
+    },
 
     pickupDate: { type: Date },
     pickupTime: { type: String },
@@ -39,17 +48,17 @@ const LeadSchema = new Schema<ILoad>(
 
     paymentStatus: {
       type: String,
-      enum: ["PENDING", "PAID", "FAILED"],
-      default: "PENDING",
+      enum: ['PENDING', 'PAID', 'FAILED'],
+      default: 'PENDING',
     },
     customerNotes: { type: String },
     paymentDate: { type: Date },
 
-    assignedDriver: { type: Schema.Types.ObjectId, ref: "Driver"  },
+    assignedDriver: { type: Schema.Types.ObjectId, ref: 'Driver' },
 
     documents: [DocumentSchema],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const LoadModel = model<ILoad>("Load", LeadSchema);
+export const LoadModel = model<ILoad>('Load', LeadSchema);

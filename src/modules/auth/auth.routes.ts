@@ -14,15 +14,15 @@ authRouter.post('/login', validator(logInValidator), authController.logIn);
 //   authController.logOut,
 // );
 authRouter.post(
-  '/changePassword',
+  '/change-password',
   auth(userRole.admin, userRole.company, userRole.driver),
   authController.changePassword,
 );
 
 authRouter.post('/refresh-token', authController.refreshToken);
 
-authRouter.post('/forgetPassword', authController.forgetPassword);
-authRouter.post('/resetPassword', authController.resetPassword);
-authRouter.get('/profile', authController.collectProfileData);
-
+authRouter.post('/forget-password', authController.forgetPassword);
+authRouter.post('/reset-password', authController.resetPassword);
+authRouter.post('/send-otp', authController.sendVerifyOtpAgain);
+authRouter.post('/verify-otp', authController.verifyOtp);
 export default authRouter;

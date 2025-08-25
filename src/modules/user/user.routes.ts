@@ -7,30 +7,36 @@ import auth from '../../middleware/auth';
 const userRoutes = express.Router();
 
 // users routes
-userRoutes.post('/create', userController.createUser);
-
-userRoutes.patch(
-  '/updateProfileData',
-  auth(userRole.admin, userRole.company, userRole.driver),
-  userController.updateProfileData,
+userRoutes.post(
+  '/create-admin',
+  auth(userRole.superAdmin),
+  userController.createAdmin,
 );
-userRoutes.delete(
-  '/selfDistuct',
-  auth(userRole.admin, userRole.company, userRole.driver),
-  userController.selfDistuct,
-);
-// userRoutes.post(
-//   '/uploadOrChangeImg',
-//   auth(userRole.admin, userRole.company, userRole.driver),
-//   upload.single('files'),
-//   userController.uploadOrChangeImg,
-// );
+userRoutes.post('/create-company', userController.createCompany);
+userRoutes.post('/create-driver', userController.createDriver);
 
 userRoutes.get(
-  '/getProfile',
+  '/get-profile',
   auth(userRole.admin, userRole.company, userRole.driver),
-  userController.getProfile,
+  userController.getUserProfile,
 );
+
+// userRoutes.patch(
+//   '/updateProfileData',
+//   auth(userRole.admin, userRole.company, userRole.driver),
+//   userController.updateProfileData,
+// );
+// userRoutes.delete(
+//   '/selfDistuct',
+//   auth(userRole.admin, userRole.company, userRole.driver),
+//   userController.selfDistuct,
+// );
+// // userRoutes.post(
+// //   '/uploadOrChangeImg',
+// //   auth(userRole.admin, userRole.company, userRole.driver),
+// //   upload.single('files'),
+// //   userController.uploadOrChangeImg,
+// // );
 
 // admin routes
 userRoutes.get(
@@ -38,10 +44,10 @@ userRoutes.get(
   auth(userRole.admin, userRole.company, userRole.driver),
   userController.getAllUsers,
 );
-userRoutes.delete(
-  '/deleteSingleUser',
-  auth(userRole.admin),
-  userController.deleteSingleUser,
-);
+// userRoutes.delete(
+//   '/deleteSingleUser',
+//   auth(userRole.admin),
+//   userController.deleteSingleUser,
+// );
 
 export default userRoutes;

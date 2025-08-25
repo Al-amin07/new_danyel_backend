@@ -1,14 +1,31 @@
-import { Types } from 'mongoose';
 import catchAsync from '../../util/catchAsync';
 import sendResponse from '../../util/sendResponse';
-import idConverter from '../../util/idConvirter';
 import userServices from './user.service';
+import { StatusCodes } from 'http-status-codes';
 
-const createUser = catchAsync(async (req, res) => {
+const createAdmin = catchAsync(async (req, res) => {
   const user = req.body;
-  const result = await userServices.createUser(user);
-  res.status(200).json({
-    message: 'user created successfully',
+
+  const result = await userServices.createAdminToDB(user);
+  res.status(StatusCodes.CREATED).json({
+    message: 'company created successfully',
+    data: result,
+  });
+});
+const createCompany = catchAsync(async (req, res) => {
+  const user = req.body;
+
+  const result = await userServices.createCompanyToDB(user);
+  res.status(StatusCodes.CREATED).json({
+    message: 'company created successfully',
+    data: result,
+  });
+});
+const createDriver = catchAsync(async (req, res) => {
+  const user = req.body;
+  const result = await userServices.createDriverToDB(user);
+  res.status(StatusCodes.CREATED).json({
+    message: 'driver created successfully',
     data: result,
   });
 });
@@ -22,50 +39,60 @@ const getAllUsers = catchAsync(async (req, res) => {
     data: result,
   });
 });
-
-const updateProfileData = catchAsync(async (req, res) => {
-  const user_id =
-    typeof req.user.id === 'string' ? idConverter(req.user.id) : req.user.id;
-  const payload = req.body;
-  const result = await userServices.updateProfileData(user_id, payload);
+const getUserProfile = catchAsync(async (req, res) => {
+  const { id } = req.user;
+  const result = await userServices.getUserProfile(id);
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: 'profile updated',
+    message: 'User data retrived successfully',
     data: result,
   });
 });
 
-const deleteSingleUser = catchAsync(async (req, res) => {
-  const user_id = req.query.user_id as string;
-  const userIdConverted = idConverter(user_id);
-  console.log(user_id, userIdConverted);
-  if (!userIdConverted) {
-    throw new Error('user id conversiopn failed');
-  }
-  const result = await userServices.deleteSingleUser(userIdConverted);
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: 'user deleted',
-    data: result,
-  });
-});
+// const updateProfileData = catchAsync(async (req, res) => {
+//   const user_id =
+//     typeof req.user.id === 'string' ? idConverter(req.user.id) : req.user.id;
+//   const payload = req.body;
+//   const result = await userServices.updateProfileData(user_id, payload);
+//   sendResponse(res, {
+//     statusCode: 200,
+//     success: true,
+//     message: 'profile updated',
+//     data: result,
+//   });
+// });
 
-const selfDistuct = catchAsync(async (req, res) => {
-  const user_id = req.user.id;
-  const userIdConverted = idConverter(user_id);
-  if (!userIdConverted) {
-    throw new Error('user id conversion failed');
-  }
-  const result = await userServices.selfDistuct(userIdConverted);
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: 'your account deletation successfull',
-    data: result,
-  });
-});
+// const deleteSingleUser = catchAsync(async (req, res) => {
+//   const user_id = req.query.user_id as string;
+//   const userIdConverted = idConverter(user_id);
+//   console.log(user_id, userIdConverted);
+//   if (!userIdConverted) {
+//     throw new Error('user id conversiopn failed');
+//   }
+//   const result = await userServices.deleteSingleUser(userIdConverted);
+//   sendResponse(res, {
+//     statusCode: 200,
+//     success: true,
+//     message: 'user deleted',
+//     data: result,
+//   });
+// });
+
+// const selfDistuct = catchAsync(async (req, res) => {
+//   const user_id = req.user.id;
+//   const userIdConverted = idConverter(user_id);
+//   if (!userIdConverted) {
+//     throw new Error('user id conversion failed');
+//   }
+//   const result = await userServices.selfDistuct(userIdConverted);
+//   sendResponse(res, {
+//     statusCode: 200,
+//     success: true,
+//     message: 'your account deletation successfull',
+//     data: result,
+//   });
+// });
 
 // const uploadOrChangeImg = catchAsync(async (req, res) => {
 //   const actionType = req.query.actionType as string; // Fixed typo in `actionType`
@@ -97,30 +124,33 @@ const selfDistuct = catchAsync(async (req, res) => {
 //   });
 // });
 
-const getProfile = catchAsync(async (req, res) => {
-  const user_id = req.user.id;
-  const converted_user_id = idConverter(user_id);
-  if (!converted_user_id) {
-    throw Error('id conversation failed');
-  }
-  const result = await userServices.getProfile(converted_user_id);
+// const getProfile = catchAsync(async (req, res) => {
+//   const user_id = req.user.id;
+//   const converted_user_id = idConverter(user_id);
+//   if (!converted_user_id) {
+//     throw Error('id conversation failed');
+//   }
+//   const result = await userServices.getProfile(converted_user_id);
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: 'your position retrived',
-    data: result,
-  });
-});
+//   sendResponse(res, {
+//     statusCode: 200,
+//     success: true,
+//     message: 'your position retrived',
+//     data: result,
+//   });
+// });
 
 const userController = {
-  createUser,
+  createAdmin,
+  createCompany,
+  createDriver,
   getAllUsers,
-  updateProfileData,
-  deleteSingleUser,
-  selfDistuct,
-  // uploadOrChangeImg,
-  getProfile,
+  getUserProfile,
+  // updateProfileData,
+  // deleteSingleUser,
+  // selfDistuct,
+  // // uploadOrChangeImg,
+  // getProfile,
 };
 
 export default userController;

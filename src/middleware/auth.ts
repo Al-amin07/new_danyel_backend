@@ -5,54 +5,53 @@ import catchAsync from '../util/catchAsync';
 import { TUserRole } from '../constents';
 import { User } from '../modules/user/user.model';
 import idConverter from '../util/idConvirter';
+import ApppError from '../error/AppError';
+import { StatusCodes } from 'http-status-codes';
+import { TUser } from '../modules/user/user.interface';
+import { Types } from 'mongoose';
 
 const auth = (...requeredUserRole: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const authorizationToken = req?.headers?.authorization;
-
-    // console.log("auth token",authorizationToken)
-
     if (!authorizationToken) {
-      throw new Error('Unauthorized User: Missing Authorization Token');
+      throw new ApppError(
+        StatusCodes.UNAUTHORIZED,
+        'Unauthorized User: Missing Authorization Token',
+      );
     }
 
     const decoded = authUtill.decodeAuthorizationToken(authorizationToken);
 
     if (!decoded) {
-      throw new Error('Unauthorized User: Token decoding failed');
+      throw new ApppError(
+        StatusCodes.UNAUTHORIZED,
+        'Unauthorized User: Invalid Authorization Token',
+      );
     }
 
     const { id, role, iat } = decoded as JwtPayload;
 
     // Check if the user's role is allowed
     if (requeredUserRole.length && !requeredUserRole.includes(role)) {
-      throw new Error('Unauthorized User: Role not permitted yoo yoo');
+      throw new ApppError(
+        StatusCodes.FORBIDDEN,
+        'Unauthorized User: Role not permitted',
+      );
     }
 
     // Find the user in the database
-    const findUser = await User.findOne({
-      _id: idConverter(id)
+    const isUserExist = await User.findOne({
+      _id: idConverter(id),
     });
 
-    if (!findUser) {
+    if (!isUserExist) {
       throw new Error('Unauthorized User: Forbidden Access');
     }
 
-    // // Check if the user has logged out after the token was issued
-    // const logOutTime = findUser.loggedOutTime
-    //   ? new Date(findUser.loggedOutTime).getTime() / 1000
-    //   : null;
-
-    // if (logOutTime && iat && iat < logOutTime) {
-    //   throw new Error(
-    //     'Unauthorized User: Your session has expired. Please log in again',
-    //   );
-    // }
-
-    // Attach user information to the request
+    if (isUserExist.isBlocked || isUserExist.isDeleted) {
+      throw new ApppError(StatusCodes.FORBIDDEN, 'This user is blocked');
+    }
     req.user = decoded as JwtPayload;
-
-    // Proceed to the next middleware
     next();
   });
 };
