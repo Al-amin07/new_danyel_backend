@@ -40,12 +40,11 @@ const DriverSchema = new Schema<IDriver>(
     availability: {
       type: String,
       enum: Object.values(EAvailability),
-      default: EAvailability.FULL_TIME,
+      default: EAvailability.AVAILABLE,
       required: true,
     },
     workingHours: { type: String, required: true, default: '9am - 5pm' },
     preferredDeliveryZones: [{ type: String }],
-
     nidOrPassport: { type: FileSchema },
     drivingLicense: { type: FileSchema },
     vehicleRegistration: { type: FileSchema },

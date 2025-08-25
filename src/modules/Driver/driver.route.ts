@@ -3,6 +3,8 @@ import { upload } from '../../util/uploadImgToCloudinary';
 import { driverController } from './driver.controller';
 import auth from '../../middleware/auth';
 import { userRole } from '../../constents';
+import validator from '../../middleware/validator';
+import { loadStatusValidationSchema } from './driver.validation';
 
 const driverRoute = express.Router();
 
@@ -19,6 +21,18 @@ driverRoute.patch(
     next();
   },
   driverController.updateDriverProfile,
+);
+
+driverRoute.patch(
+  '/assign-load',
+  auth(userRole.driver),
+  driverController.assignLoadToDriver,
+);
+driverRoute.patch(
+  '/update-load-status',
+  validator(loadStatusValidationSchema),
+  auth(userRole.driver),
+  driverController.updateLoadStatus,
 );
 
 export default driverRoute;

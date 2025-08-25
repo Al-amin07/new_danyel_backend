@@ -1,5 +1,4 @@
-import bcrypt from 'bcrypt';
-import mongoose, { Schema, model } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import { TUser } from './user.interface';
 import { userRole } from '../../constents';
 
@@ -15,6 +14,7 @@ const UserSchema = new Schema<TUser>(
       required: true,
       default: userRole.company,
     },
+    profileImage: { type: String },
     isDeleted: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     isProfileUpdate: { type: Boolean, default: false },

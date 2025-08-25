@@ -13,8 +13,12 @@ import generateOTPEmail from '../../util/generateOtpEmail';
 
 import { generateOtp } from '../../util/generateOtp';
 import { TUser } from './user.interface';
+import config from '../../config';
 
-const createAdminToDB = async (payload: TUser) => {
+const createAdminToDB = async (
+  payload: TUser,
+  file: Express.Multer.File | undefined,
+) => {
   const isUserExist = await User.findOne({ email: payload.email });
   if (isUserExist) {
     throw new ApppError(StatusCodes.CONFLICT, 'This user already exist!');
@@ -22,7 +26,7 @@ const createAdminToDB = async (payload: TUser) => {
   const { name, email, phone, password } = payload;
   const hashedPassword = await bcrypt.hash(password, 10);
   const otp = generateOtp();
-  const userInfo = {
+  const userInfo: Partial<TUser> = {
     name,
     email,
     phone,
@@ -31,6 +35,9 @@ const createAdminToDB = async (payload: TUser) => {
     emailVerificationCode: otp,
     emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
   };
+  if (file?.path) {
+    userInfo.profileImage = `${config.server_url}/uploads/${file?.filename}`;
+  }
   const result = await User.create(userInfo);
   const sendEmailTo = await sendEmail(
     email,
@@ -41,7 +48,10 @@ const createAdminToDB = async (payload: TUser) => {
   return result;
 };
 
-const createCompanyToDB = async (payload: TCompanyUser) => {
+const createCompanyToDB = async (
+  payload: TCompanyUser,
+  file: Express.Multer.File | undefined,
+) => {
   if (!payload) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'User info not found!!');
   }
@@ -62,7 +72,7 @@ const createCompanyToDB = async (payload: TCompanyUser) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const otp = generateOtp();
-  const userInfo = {
+  const userInfo: Partial<TUser> = {
     name,
     email,
     phone,
@@ -71,6 +81,9 @@ const createCompanyToDB = async (payload: TCompanyUser) => {
     emailVerificationCode: otp,
     emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
   };
+  if (file?.path) {
+    userInfo.profileImage = `${config.server_url}/uploads/${file?.filename}`;
+  }
   console.log({ userInfo });
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -110,19 +123,21 @@ const createCompanyToDB = async (payload: TCompanyUser) => {
   }
 };
 
-const createDriverToDB = async (payload: TDriverUser) => {
+const createDriverToDB = async (
+  payload: TDriverUser,
+  file: Express.Multer.File | undefined,
+) => {
   const { name, email, password, phone, ...driverData } = payload;
   console.log({ name, email, password, phone });
+
   const isUserExist = await User.findOne({ email }).select('+password');
   if (isUserExist) {
     throw new ApppError(StatusCodes.CONFLICT, 'This user already exist!');
   }
-  if (!password) {
-    throw new Error('Password is required');
-  }
+
   const otp = generateOtp();
   const hashedPassword = await bcrypt.hash(password, 10);
-  const userInfo = {
+  const userInfo: Partial<TUser> = {
     name,
     email,
     phone,
@@ -131,6 +146,9 @@ const createDriverToDB = async (payload: TDriverUser) => {
     emailVerificationCode: otp,
     emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
   };
+  if (file?.path) {
+    userInfo.profileImage = `${config.server_url}/uploads/${file?.filename}`;
+  }
   const session = await mongoose.startSession();
   session.startTransaction();
   try {

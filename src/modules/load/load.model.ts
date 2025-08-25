@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { IAddress, IDocument, ILoad } from './load.interface';
+import { IAddress, ICustomer, IDocument, ILoad } from './load.interface';
 
 const AddressSchema = new Schema<IAddress>({
   street: { type: String, required: true },
@@ -8,6 +8,12 @@ const AddressSchema = new Schema<IAddress>({
   state: { type: String, required: true },
   zipCode: { type: Number, required: true },
   country: { type: String, required: true },
+});
+
+const customerSchema = new Schema<ICustomer>({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String },
 });
 
 const DocumentSchema = new Schema<IDocument>({
@@ -29,9 +35,10 @@ const LeadSchema = new Schema<ILoad>(
       type: String,
       enum: [
         'Pending Assignment',
-        'In Transit',
-        'At Pickup',
+        'Awaiting Pickup',
         'En Route to Pickup',
+        'At Pickup',
+        'In Transit',
         'Delivered',
       ],
       default: 'Pending Assignment',
@@ -55,7 +62,7 @@ const LeadSchema = new Schema<ILoad>(
     paymentDate: { type: Date },
 
     assignedDriver: { type: Schema.Types.ObjectId, ref: 'Driver' },
-
+    customer: { type: customerSchema, required: true },
     documents: [DocumentSchema],
   },
   { timestamps: true },

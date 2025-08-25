@@ -5,8 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 
 const createAdmin = catchAsync(async (req, res) => {
   const user = req.body;
-
-  const result = await userServices.createAdminToDB(user);
+  const file = req.file;
+  const result = await userServices.createAdminToDB(user, file);
   res.status(StatusCodes.CREATED).json({
     message: 'company created successfully',
     data: result,
@@ -14,8 +14,8 @@ const createAdmin = catchAsync(async (req, res) => {
 });
 const createCompany = catchAsync(async (req, res) => {
   const user = req.body;
-
-  const result = await userServices.createCompanyToDB(user);
+  const file = req.file;
+  const result = await userServices.createCompanyToDB(user, file);
   res.status(StatusCodes.CREATED).json({
     message: 'company created successfully',
     data: result,
@@ -23,7 +23,9 @@ const createCompany = catchAsync(async (req, res) => {
 });
 const createDriver = catchAsync(async (req, res) => {
   const user = req.body;
-  const result = await userServices.createDriverToDB(user);
+  const file = req.file;
+
+  const result = await userServices.createDriverToDB(user, file);
   res.status(StatusCodes.CREATED).json({
     message: 'driver created successfully',
     data: result,

@@ -1,15 +1,19 @@
 import config from '../../config';
-import fs from 'fs';
+import fs, { stat } from 'fs';
 import path from 'path';
 import { Driver } from './driver.model';
+import { LoadModel } from '../load/load.model';
+import mongoose from 'mongoose';
+import ApppError from '../../error/AppError';
+import { StatusCodes } from 'http-status-codes';
 const updateDriverProfileIntoDb = async (
   id: string,
   payload: any,
-  files: any,
+
+  files: { [fieldname: string]: Express.Multer.File[] } | undefined,
 ) => {
   const folder = 'uploads/drivers'; // local folder for drivers
-  const { location, ...restDriverData } = payload;
-  //   console.log({ payload, files, folder });
+  const { location, loads, ...restDriverData } = payload;
 
   if (!fs.existsSync(folder)) {
     fs.mkdirSync(folder, { recursive: true });
@@ -38,62 +42,127 @@ const updateDriverProfileIntoDb = async (
       };
     }
   }
+
   if (location) {
     (Object.keys(location) as (keyof {})[]).forEach((key) => {
       updateData[`location.${key}`] = location[key];
     });
   }
-  console.log({ id });
   const result = await Driver.findOneAndUpdate({ user: id }, updateData, {
     new: true,
   });
   return result;
 };
 
-export const driverService = {
-  updateDriverProfileIntoDb,
+const assignLoadToDriver = async (id: string, loadId: string) => {
+  if (!mongoose.Types.ObjectId.isValid(loadId)) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid load ID');
+  }
+
+  const isLoadExist = await LoadModel.findById(loadId).lean();
+  if (!isLoadExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Load not found');
+  }
+  const isDriverExist = await Driver.findOne({ user: id });
+  if (!isDriverExist) {
+    throw new ApppError(
+      StatusCodes.NOT_FOUND,
+      'Driver profile not found. Please complete your driver profile first.',
+    );
+  }
+  console.log({ isDriverExist });
+  if (
+    isDriverExist.loads &&
+    isDriverExist.loads.length > 0 &&
+    isDriverExist.loads.includes(new mongoose.Types.ObjectId(loadId))
+  ) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'This load is already assigned to you',
+    );
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const result = await Driver.findOneAndUpdate(
+      { user: id },
+      {
+        $push: { loads: loadId },
+      },
+      { new: true, session, upsert: true },
+    );
+
+    await LoadModel.findByIdAndUpdate(
+      loadId,
+      { assignedDriver: result.id, loadStatus: 'Awaiting Pickup' },
+      { session },
+    );
+
+    const populatedResult = await Driver.findById(result._id)
+      .populate('loads')
+      .session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return populatedResult;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
-// const updateDriverProfileIntoDb = async (
-//     id: string,
-//     data: any,
-//     files: any
-// ) => {
-//     const folder = "drivers";
+const updateLoadStatus = async (
+  id: string,
+  payload: { loadId: string; status: string },
+) => {
+  if (!mongoose.Types.ObjectId.isValid(payload?.loadId)) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid load ID');
+  }
 
-//     const updateData: any = {
-//         ...data, // spreads text fields like vehicleType, model, etc.
-//     };
+  const isLoadExist = await LoadModel.findById(payload?.loadId).lean();
+  if (!isLoadExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Load not found');
+  }
+  if (isLoadExist.loadStatus === payload?.status) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      `Load is already in ${payload?.status} status`,
+    );
+  }
 
-//     if (files?.nidOrPassport?.[0]) {
-//         updateData.nidOrPassport = await uploadToCloudinary(
-//             files.nidOrPassport[0].path,
-//             folder
-//         );
-//     }
-//     if (files?.drivingLicense?.[0]) {
-//         updateData.drivingLicense = await uploadToCloudinary(
-//             files.drivingLicense[0].path,
-//             folder
-//         );
-//     }
-//     if (files?.vehicleRegistration?.[0]) {
-//         updateData.vehicleRegistration = await uploadToCloudinary(
-//             files.vehicleRegistration[0].path,
-//             folder
-//         );
-//     };
+  const isDriverExist = await Driver.findOne({ user: id });
+  if (!isDriverExist) {
+    throw new ApppError(
+      StatusCodes.NOT_FOUND,
+      'Driver profile not found. Please complete your driver profile first.',
+    );
+  }
+  console.log(isLoadExist?.assignedDriver === isDriverExist?.id);
+  // return {
+  //   isLoadExist: isLoadExist?.assignedDriver,
+  //   isDriverExistId: isDriverExist?.id,
+  // };
 
-//     console.log("updatedData: ", updateData)
+  if (isLoadExist.assignedDriver != isDriverExist?.id) {
+    throw new ApppError(
+      StatusCodes.FORBIDDEN,
+      'You are not authorized to update this load status',
+    );
+  }
 
-//     // 🔹 Partial update (PATCH) → only updates provided fields
-//     const updatedDriver = await Driver.findOneAndUpdate({ user: id }, updateData, { new: true, upsert: true, runValidators: true });
+  const load = await LoadModel.findByIdAndUpdate(
+    payload?.loadId,
+    { loadStatus: payload?.status },
+    { new: true },
+  );
+  return load;
+};
 
-//     console.log('Driver profile: ', updatedDriver)
-
-//     if (!updatedDriver) {
-//         throw new Error("Driver not found");
-//     }
-
-//     return updatedDriver;
-// };
+export const driverService = {
+  updateDriverProfileIntoDb,
+  assignLoadToDriver,
+  updateLoadStatus,
+};

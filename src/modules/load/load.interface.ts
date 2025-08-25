@@ -22,6 +22,11 @@ enum ELoadStatus {
   'En Route to Pickup',
   'Delivered',
 }
+export interface ICustomer {
+  name: string;
+  email: string;
+  phone?: string;
+}
 
 export interface ILoad {
   loadId: string;
@@ -54,6 +59,8 @@ export interface ILoad {
   paymentDate?: Date;
 
   assignedDriver?: Types.ObjectId;
+
+  customer: ICustomer;
 
   documents: IDocument[];
 }

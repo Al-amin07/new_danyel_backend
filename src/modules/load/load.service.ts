@@ -1,7 +1,9 @@
+import mongoose from 'mongoose';
 import config from '../../config';
 import ApppError from '../../error/AppError';
 import { IAddress, ILoad } from './load.interface';
 import { LoadModel } from './load.model';
+import { Driver } from '../Driver/driver.model';
 
 const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
   if (!files || files.length === 0) {
@@ -29,6 +31,9 @@ const getAllLoad = async () => {
 
 const getSingleLoad = async (id: string) => {
   const result = await LoadModel.findById(id).populate('assignedDriver');
+  if (!result) {
+    throw new ApppError(404, 'Load not found');
+  }
   return result;
 };
 
@@ -79,11 +84,73 @@ const updateLoadToDB = async (
 };
 
 const assignDriver = async (loadId: string, payload: { driverId: string }) => {
+  if (!mongoose.Types.ObjectId.isValid(loadId)) {
+    throw new ApppError(400, 'Invalid load ID');
+  }
+  const isLoadExist = await LoadModel.findById(loadId).lean();
+  if (!isLoadExist) {
+    throw new ApppError(404, 'Load not found');
+  }
+  if (!mongoose.Types.ObjectId.isValid(payload?.driverId)) {
+    throw new ApppError(400, 'Invalid driver ID');
+  }
+  const isDriverExist = await Driver.findById(payload?.driverId).lean();
+  if (!isDriverExist) {
+    throw new ApppError(404, 'Driver not found');
+  }
+  if (
+    isDriverExist?.loads &&
+    isDriverExist.loads.length > 0 &&
+    isDriverExist.loads.includes(new mongoose.Types.ObjectId(loadId))
+  ) {
+    throw new ApppError(400, 'This load is already assigned to this driver');
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const result = await LoadModel.findByIdAndUpdate(
+      loadId,
+      {
+        assignedDriver: payload?.driverId,
+        loadStatus: 'Awaiting Pickup',
+      },
+      { new: true, session },
+    );
+    await Driver.findByIdAndUpdate(
+      payload?.driverId,
+      {
+        $push: { loads: loadId },
+      },
+      { session },
+    );
+    await session.commitTransaction();
+    session.endSession();
+    return result;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+const updateLoadStatus = async (
+  loadId: string,
+  payload: { status: string },
+) => {
+  if (!mongoose.Types.ObjectId.isValid(loadId)) {
+    throw new ApppError(400, 'Invalid load ID');
+  }
+  const isLoadExist = await LoadModel.findById(loadId).lean();
+  if (!isLoadExist) {
+    throw new ApppError(404, 'Load not found');
+  }
+  if (isLoadExist.loadStatus === payload?.status) {
+    throw new ApppError(400, `Load is already in ${payload?.status} status`);
+  }
   const result = await LoadModel.findByIdAndUpdate(
     loadId,
-    {
-      assignedDriver: payload?.driverId,
-    },
+    { loadStatus: payload?.status },
     { new: true },
   );
   return result;
@@ -108,4 +175,5 @@ export const loadService = {
   updateLoadToDB,
   assignDriver,
   generateLoadId,
+  updateLoadStatus,
 };
