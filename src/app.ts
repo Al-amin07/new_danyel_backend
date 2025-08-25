@@ -5,10 +5,8 @@ import globalErrorHandler from './middleware/globalErrorHandler';
 import routeNotFound from './middleware/routeNotFound';
 import Routes from './routes';
 
-// middleWares
 app.use(express.json());
-app.use("/uploads", express.static("uploads"));
-// app.use(cors());
+app.use('/uploads', express.static('uploads'));
 app.use(
   cors({
     origin: ['*', 'http://localhost:5173'],

@@ -3,8 +3,6 @@ import ApppError from '../../error/AppError';
 import catchAsync from '../../util/catchAsync';
 import sendResponse from '../../util/sendResponse';
 import authServices from './auth.service';
-import { TUser } from '../user/user.interface';
-import { Types } from 'mongoose';
 
 const logIn = catchAsync(async (req, res) => {
   const result = await authServices.logIn(req.body);
@@ -41,7 +39,7 @@ const changePassword = catchAsync(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   const result = await authServices.changePassword(
-    req?.user.id,
+    req.user?.id,
     oldPassword,
     newPassword,
   );
@@ -74,15 +72,9 @@ const forgetPassword = catchAsync(async (req, res) => {
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-  const { id, newPassword } = req.body;
-  const authorizationToken = req.headers?.authorization as string;
-  // console.log(req.body)
+  const { otp, newPassword, email } = req.body;
 
-  const result = await authServices.resetPassword(
-    authorizationToken,
-    id,
-    newPassword,
-  );
+  const result = await authServices.resetPassword(otp, email, newPassword);
 
   res.status(200).json({
     success: true,
@@ -91,13 +83,20 @@ const resetPassword = catchAsync(async (req, res) => {
   });
 });
 
-const collectProfileData = catchAsync(async (req, res) => {
-  const user = req.user;
-  const result = await authServices.collectProfileData(user.id);
-  res.status(200).json({
-    success: true,
-    message: 'password changed',
-    body: result,
+const verifyOtp = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const result = await authServices.verifyOtp(email, otp);
+  res.status(StatusCodes.CREATED).json({
+    message: 'Otp verified successfully',
+    data: result,
+  });
+});
+const sendVerifyOtpAgain = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await authServices.sendVerifyEmailOtpAgain(email);
+  res.status(StatusCodes.CREATED).json({
+    message: 'Otp code  send to your email successfully',
+    data: result,
   });
 });
 
@@ -108,6 +107,7 @@ const authController = {
   refreshToken,
   forgetPassword,
   resetPassword,
-  collectProfileData,
+  sendVerifyOtpAgain,
+  verifyOtp,
 };
 export default authController;

@@ -7,10 +7,19 @@ import auth from '../../middleware/auth';
 const userRoutes = express.Router();
 
 // users routes
+userRoutes.post(
+  '/create-admin',
+  auth(userRole.superAdmin),
+  userController.createAdmin,
+);
 userRoutes.post('/create-company', userController.createCompany);
 userRoutes.post('/create-driver', userController.createDriver);
-userRoutes.post('/send-otp', userController.sendVerifyOtpAgain);
-userRoutes.post('/verify-otp', userController.verifyOtp);
+
+userRoutes.get(
+  '/get-profile',
+  auth(userRole.admin, userRole.company, userRole.driver),
+  userController.getUserProfile,
+);
 
 // userRoutes.patch(
 //   '/updateProfileData',
@@ -28,12 +37,6 @@ userRoutes.post('/verify-otp', userController.verifyOtp);
 // //   upload.single('files'),
 // //   userController.uploadOrChangeImg,
 // // );
-
-// userRoutes.get(
-//   '/getProfile',
-//   auth(userRole.admin, userRole.company, userRole.driver),
-//   userController.getProfile,
-// );
 
 // admin routes
 userRoutes.get(

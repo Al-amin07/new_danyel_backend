@@ -76,11 +76,12 @@ export enum EAvailability {
 
 export interface IDriver extends Document {
   user: Types.ObjectId;
-  location?: ILocation; // Reference to User
+  location?: ILocation;
   licenseNumber?: string;
   vehicleType?: EVehicleType;
   vehicleModel?: EVehicleModel;
   companyId?: Types.ObjectId; // Company this driver belongs to
+  loads: Types.ObjectId[]; // References to Load documents
 
   availability: EAvailability;
   workingHours: string;
@@ -96,7 +97,7 @@ export interface IDriver extends Document {
 }
 
 export interface IFileType {
-  secure_url: string;
+  url: string;
   type: string;
 }
 

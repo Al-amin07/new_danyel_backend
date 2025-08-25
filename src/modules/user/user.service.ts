@@ -10,13 +10,40 @@ import { TDriverUser } from '../Driver/driver.interface';
 import { Driver } from '../Driver/driver.model';
 import { sendEmail } from '../../util/sendEmail';
 import generateOTPEmail from '../../util/generateOtpEmail';
-import authUtil from '../auth/auth.utill';
-import config from '../../config';
+
 import { generateOtp } from '../../util/generateOtp';
+import { TUser } from './user.interface';
+
+const createAdminToDB = async (payload: TUser) => {
+  const isUserExist = await User.findOne({ email: payload.email });
+  if (isUserExist) {
+    throw new ApppError(StatusCodes.CONFLICT, 'This user already exist!');
+  }
+  const { name, email, phone, password } = payload;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const otp = generateOtp();
+  const userInfo = {
+    name,
+    email,
+    phone,
+    password: hashedPassword,
+    role: 'admin',
+    emailVerificationCode: otp,
+    emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
+  };
+  const result = await User.create(userInfo);
+  const sendEmailTo = await sendEmail(
+    email,
+    'Your verification code',
+    generateOTPEmail(otp, name),
+  );
+  console.log({ sendEmailTo });
+  return result;
+};
 
 const createCompanyToDB = async (payload: TCompanyUser) => {
   if (!payload) {
-    throw new Error('User info not found!!');
+    throw new ApppError(StatusCodes.NOT_FOUND, 'User info not found!!');
   }
 
   const isUserExist = await User.findOne({ email: payload.email }).select(
@@ -132,98 +159,45 @@ const createDriverToDB = async (payload: TDriverUser) => {
     throw error;
   }
 };
-
-const sendVerifyEmailOtpAgain = async (email: string) => {
-  const isUserExist = await User.findOne({ email }).select('+password');
-  if (!isUserExist) {
-    throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
-  }
-  if (isUserExist.isVerified) {
-    throw new ApppError(
-      StatusCodes.BAD_REQUEST,
-      'This email is already verified',
-    );
-  }
-  const otp = generateOtp();
-  const result = await User.findOneAndUpdate(
-    { email },
-    {
-      emailVerificationCode: otp,
-      emailVerificationExpires: new Date(Date.now() + 10 * 60 * 1000),
-    },
-    { new: true },
-  );
-  if (!result) {
-    throw new ApppError(StatusCodes.INTERNAL_SERVER_ERROR, 'Operation failed');
-  }
-  const sendEmailTo = await sendEmail(
-    email,
-    'Your verification code',
-    generateOTPEmail(otp, result.name),
-  );
-  if (sendEmailTo.success === false) {
-    throw new ApppError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Failed to send email',
-    );
-  }
-  return 'Verification email sent successfully';
-};
-
 const getAllUsers = async () => {
   const result = await User.find();
   return result;
 };
 
-const verifyOtp = async (email: string, otp: string) => {
-  const user = await User.findOne({ email }).lean();
-  if (!user) {
+const getUserProfile = async (userId: string) => {
+  const isUserExist = await User.findById(userId).select('-password');
+  if (!isUserExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
   }
-  if (user.isVerified) {
-    throw new ApppError(
-      StatusCodes.BAD_REQUEST,
-      'This email is already verified',
-    );
+  if (isUserExist?.role === 'company') {
+    const companyProfile = await Company.findOne({
+      user: isUserExist.id,
+    }).populate('user', '-password');
+    return companyProfile;
   }
-  if (user.emailVerificationCode !== otp) {
-    throw new ApppError(StatusCodes.UNAUTHORIZED, 'Invalid OTP');
+  if (isUserExist?.role === 'driver') {
+    const driverProfile = await Driver.findOne({
+      user: isUserExist.id,
+    }).populate('user', '-password');
+    return driverProfile;
   }
-  if (
-    user.emailVerificationExpires &&
-    user.emailVerificationExpires < new Date()
-  ) {
-    throw new ApppError(StatusCodes.UNAUTHORIZED, 'OTP has expired');
-  }
-  user.isVerified = true;
-  user.emailVerificationCode = undefined;
-  user.emailVerificationExpires = undefined;
-  user.lastLoggedin = new Date();
-  const updatedUser = await User.findOneAndUpdate({ email }, user, {
-    new: true,
-  });
-
-  const tokenizeData = {
-    id: user._id,
-    role: user.role,
-    username: updatedUser?.name,
-    email: updatedUser?.email,
-  };
-
-  const accessToken = authUtil.createToken(
-    tokenizeData,
-    config.jwt_token_secret,
-    config.token_expairsIn,
-  );
-
-  const refreshToken = authUtil.createToken(
-    tokenizeData,
-    config.jwt_refresh_Token_secret,
-    config.rifresh_expairsIn,
-  );
-
-  return { accessToken, refreshToken, userData: updatedUser };
+  return isUserExist;
 };
+
+const userServices = {
+  createAdminToDB,
+  createCompanyToDB,
+  createDriverToDB,
+  getAllUsers,
+  getUserProfile,
+  // updateProfileData,
+  // deleteSingleUser,
+  // selfDistuct,
+  // uploadOrChangeImg,
+  // getProfile,
+};
+
+export default userServices;
 
 // const updateProfileData = async (
 //   user_id: Types.ObjectId,
@@ -308,18 +282,3 @@ const verifyOtp = async (email: string, otp: string) => {
 
 //   return profile;
 // };
-
-const userServices = {
-  createCompanyToDB,
-  getAllUsers,
-  createDriverToDB,
-  verifyOtp,
-  sendVerifyEmailOtpAgain,
-  // updateProfileData,
-  // deleteSingleUser,
-  // selfDistuct,
-  // uploadOrChangeImg,
-  // getProfile,
-};
-
-export default userServices;

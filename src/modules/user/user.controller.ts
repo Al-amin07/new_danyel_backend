@@ -3,6 +3,15 @@ import sendResponse from '../../util/sendResponse';
 import userServices from './user.service';
 import { StatusCodes } from 'http-status-codes';
 
+const createAdmin = catchAsync(async (req, res) => {
+  const user = req.body;
+
+  const result = await userServices.createAdminToDB(user);
+  res.status(StatusCodes.CREATED).json({
+    message: 'company created successfully',
+    data: result,
+  });
+});
 const createCompany = catchAsync(async (req, res) => {
   const user = req.body;
 
@@ -20,22 +29,6 @@ const createDriver = catchAsync(async (req, res) => {
     data: result,
   });
 });
-const verifyOtp = catchAsync(async (req, res) => {
-  const { email, otp } = req.body;
-  const result = await userServices.verifyOtp(email, otp);
-  res.status(StatusCodes.CREATED).json({
-    message: 'Otp verified successfully',
-    data: result,
-  });
-});
-const sendVerifyOtpAgain = catchAsync(async (req, res) => {
-  const { email } = req.body;
-  const result = await userServices.sendVerifyEmailOtpAgain(email);
-  res.status(StatusCodes.CREATED).json({
-    message: 'Otp code  send to your email successfully',
-    data: result,
-  });
-});
 
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await userServices.getAllUsers();
@@ -43,6 +36,16 @@ const getAllUsers = catchAsync(async (req, res) => {
     statusCode: 200,
     success: true,
     message: 'All users',
+    data: result,
+  });
+});
+const getUserProfile = catchAsync(async (req, res) => {
+  const { id } = req.user;
+  const result = await userServices.getUserProfile(id);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'User data retrived successfully',
     data: result,
   });
 });
@@ -138,11 +141,11 @@ const getAllUsers = catchAsync(async (req, res) => {
 // });
 
 const userController = {
+  createAdmin,
   createCompany,
   createDriver,
   getAllUsers,
-  verifyOtp,
-  sendVerifyOtpAgain,
+  getUserProfile,
   // updateProfileData,
   // deleteSingleUser,
   // selfDistuct,

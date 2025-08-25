@@ -16,7 +16,7 @@ const LocationSchema = new Schema<ILocation>({
 });
 
 const FileSchema = new Schema<IFileType>({
-  secure_url: { type: String, required: true },
+  url: { type: String, required: true },
   type: { type: String, required: true },
 });
 
@@ -36,7 +36,7 @@ const DriverSchema = new Schema<IDriver>(
     },
 
     companyId: { type: Schema.Types.ObjectId, ref: 'Company' },
-
+    loads: [{ type: Schema.Types.ObjectId, ref: 'Load' }],
     availability: {
       type: String,
       enum: Object.values(EAvailability),
