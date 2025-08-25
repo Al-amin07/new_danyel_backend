@@ -70,8 +70,8 @@ export enum EVehicleModel {
 }
 
 export enum EAvailability {
-  FULL_TIME = 'FullTime',
-  PART_TIME = 'PartTime',
+  ON_DUTY = 'On Duty',
+  AVAILABLE = 'Available',
 }
 
 export interface IDriver extends Document {

@@ -68,6 +68,16 @@ const generateLoadId = catchAsync(async (req, res) => {
     message: 'Load id generated successfully',
   });
 });
+const updateLoadStatus = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+  const result = await loadService.updateLoadStatus(loadId, req.body);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: 200,
+    message: 'Load status updated successfully',
+  });
+});
 
 export const loadController = {
   createLoad,
@@ -76,4 +86,5 @@ export const loadController = {
   updateLoad,
   aassignDriverToLoad,
   generateLoadId,
+  updateLoadStatus,
 };

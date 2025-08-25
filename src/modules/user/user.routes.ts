@@ -2,6 +2,7 @@ import express from 'express';
 import userController from './user.controller';
 import { userRole } from '../../constents';
 import auth from '../../middleware/auth';
+import { upload } from '../../util/uploadImgToCloudinary';
 // import { upload } from '../../util/uploadImgToCloudinary';
 
 const userRoutes = express.Router();
@@ -9,11 +10,32 @@ const userRoutes = express.Router();
 // users routes
 userRoutes.post(
   '/create-admin',
+  upload.single('profile'),
+  (req, res, next) => {
+    req.body = JSON.parse(req.body.data);
+    next();
+  },
   auth(userRole.superAdmin),
   userController.createAdmin,
 );
-userRoutes.post('/create-company', userController.createCompany);
-userRoutes.post('/create-driver', userController.createDriver);
+userRoutes.post(
+  '/create-company',
+  upload.single('profile'),
+  (req, res, next) => {
+    req.body = JSON.parse(req.body.data);
+    next();
+  },
+  userController.createCompany,
+);
+userRoutes.post(
+  '/create-driver',
+  upload.single('profile'),
+  (req, res, next) => {
+    req.body = JSON.parse(req.body.data);
+    next();
+  },
+  userController.createDriver,
+);
 
 userRoutes.get(
   '/get-profile',

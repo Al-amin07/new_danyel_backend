@@ -51,7 +51,7 @@ const updateCompany = async (companyId: string, payload: ICompany) => {
         drivers,
       },
     },
-    { new: true },
+    { new: true, upsert: true },
   )
     .populate('user')
     .populate('loads')
