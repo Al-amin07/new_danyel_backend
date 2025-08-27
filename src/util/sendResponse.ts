@@ -7,6 +7,12 @@ const sendResponse = <T>(
     success: boolean;
     message?: string;
     data: T;
+    meta?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPage: number;
+    };
   },
 ) => {
   res.status(data.statusCode).json({
@@ -14,6 +20,7 @@ const sendResponse = <T>(
     success: data.success,
     message: data.message,
     data: data.data,
+    meta: data.meta,
   });
 };
 

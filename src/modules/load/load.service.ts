@@ -4,6 +4,7 @@ import ApppError from '../../error/AppError';
 import { IAddress, ILoad } from './load.interface';
 import { LoadModel } from './load.model';
 import { Driver } from '../Driver/driver.model';
+import QueryBuilder from '../../builder/QueryBuilder';
 
 const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
   if (!files || files.length === 0) {
@@ -24,9 +25,30 @@ const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
   return result;
 };
 
-const getAllLoad = async () => {
-  const result = await LoadModel.find().populate('assignedDriver');
-  return result;
+const getAllLoad = async (query: Record<string, unknown>) => {
+  const loadQuery = new QueryBuilder(LoadModel.find(), query)
+    .search([
+      'loadId',
+      'loadType',
+      'loadStatus',
+      'pickupAddress.street',
+      'pickupAddress.city',
+      'pickupAddress.apartment',
+      'pickupAddress.country',
+      'deliveryAddress.street',
+      'deliveryAddress.city',
+      'deliveryAddress.apartment',
+      'deliveryAddress.country',
+    ])
+    .filter()
+    .sort()
+    .paginate();
+  const result = await loadQuery.modelQuery.populate('assignedDriver');
+  const meta = await loadQuery.getMetaData();
+  return {
+    result,
+    meta,
+  };
 };
 
 const getSingleLoad = async (id: string) => {
