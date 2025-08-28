@@ -1,13 +1,26 @@
+import QueryBuilder from '../../builder/QueryBuilder';
 import { ICompany } from './company.interface';
 import { Company } from './company.model';
+import { companySarchableFields } from './conpany.constant';
 
-const getAllCompanyFromDb = async () => {
-  const result = await Company.find()
+const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
+  const companyQuery = new QueryBuilder(Company.find(), query)
+    .search(companySarchableFields)
+    .sort()
+    .filter()
+    .paginate();
+  // console.log({ companyQuery });
+  const result = await companyQuery.modelQuery
     .select('-password')
     .populate('user')
-    .populate('loads') // Populates all Load documents
-    .populate('drivers'); // Populates all Driver documents;
-  return result;
+    .populate('loads')
+    .populate('drivers');
+  // console.log({ result });
+  const metadata = await companyQuery.getMetaData();
+  return {
+    meta: metadata,
+    data: result,
+  };
 };
 
 const getSingleCompany = async (id: string) => {

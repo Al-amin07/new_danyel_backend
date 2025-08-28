@@ -4,10 +4,11 @@ import { companyService } from './company.service';
 import sendResponse from '../../util/sendResponse';
 
 const getAllCompany = catchAsync(async (req: Request, res: Response) => {
-  const result = await companyService.getAllCompanyFromDb();
-
+  const query = req.query;
+  const result = await companyService.getAllCompanyFromDb(query);
   sendResponse(res, {
-    data: result,
+    data: result.data,
+    meta: result.meta,
     message: 'Companies retrived successfully',
     success: true,
     statusCode: 200,

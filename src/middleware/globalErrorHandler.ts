@@ -20,8 +20,8 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   if (err instanceof ZodError) {
     const handaleZoderror = reformZodError(err);
     statusCode = 400;
-    message = 'validation error';
-    errorSource = handaleZoderror;
+    message = handaleZoderror.message;
+    errorSource = handaleZoderror.errorSource;
   } else if (err?.name === 'ValidationError') {
     const mongoseErrorHandellerr = mongoseErrorHandeller(err);
     statusCode = mongoseErrorHandellerr?.statusCode;

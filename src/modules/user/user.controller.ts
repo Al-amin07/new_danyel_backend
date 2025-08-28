@@ -7,8 +7,10 @@ const createAdmin = catchAsync(async (req, res) => {
   const user = req.body;
   const file = req.file;
   const result = await userServices.createAdminToDB(user, file);
-  res.status(StatusCodes.CREATED).json({
-    message: 'company created successfully',
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: 'admin created successfully',
     data: result,
   });
 });
@@ -16,7 +18,9 @@ const createCompany = catchAsync(async (req, res) => {
   const user = req.body;
   const file = req.file;
   const result = await userServices.createCompanyToDB(user, file);
-  res.status(StatusCodes.CREATED).json({
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
     message: 'company created successfully',
     data: result,
   });
@@ -26,8 +30,21 @@ const createDriver = catchAsync(async (req, res) => {
   const file = req.file;
 
   const result = await userServices.createDriverToDB(user, file);
-  res.status(StatusCodes.CREATED).json({
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
     message: 'driver created successfully',
+    data: result,
+  });
+});
+const createSuperAdmin = catchAsync(async (req, res) => {
+  const user = req.body;
+
+  const result = await userServices.createSuperAdmin(user);
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: 'admin created successfully',
     data: result,
   });
 });
@@ -148,6 +165,7 @@ const userController = {
   createDriver,
   getAllUsers,
   getUserProfile,
+  createSuperAdmin,
   // updateProfileData,
   // deleteSingleUser,
   // selfDistuct,

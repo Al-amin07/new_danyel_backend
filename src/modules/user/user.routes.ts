@@ -8,6 +8,7 @@ import { upload } from '../../util/uploadImgToCloudinary';
 const userRoutes = express.Router();
 
 // users routes
+userRoutes.post('/create-super-admin', userController.createSuperAdmin);
 userRoutes.post(
   '/create-admin',
   upload.single('profile'),

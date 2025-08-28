@@ -4,17 +4,19 @@ import { upload } from '../../util/uploadImgToCloudinary';
 import auth from '../../middleware/auth';
 import { userRole } from '../../constents';
 import validator from '../../middleware/validator';
-import { loadStatusValidationSchema } from './load.validation';
+import { loadValidationSchema } from './load.validation';
 
 const route = Router();
 
 route.post(
   '/create-load',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
   upload.array('documents', 10),
   (req, res, next) => {
     req.body = JSON.parse(req.body.data);
     next();
   },
+  validator(loadValidationSchema.createLoadSchema),
   loadController.createLoad,
 );
 
@@ -24,6 +26,7 @@ route.get('/generate-loadId', loadController.generateLoadId);
 route.get('/:loadId', loadController.getSingleLoad);
 route.patch(
   '/:loadId',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
   upload.array('documents', 10),
   (req, res, next) => {
     req.body = JSON.parse(req.body.data);
@@ -34,13 +37,13 @@ route.patch(
 
 route.patch(
   '/:loadId/assign-driver',
-  auth(userRole.admin),
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
   loadController.aassignDriverToLoad,
 );
 
 route.patch(
   `/:loadId/update-load-status`,
-  validator(loadStatusValidationSchema),
+  validator(loadValidationSchema.loadStatusValidationSchema),
   auth(userRole.admin, userRole.company),
   loadController.updateLoadStatus,
 );

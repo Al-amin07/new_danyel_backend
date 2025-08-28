@@ -16,5 +16,6 @@ export type TUser = {
   emailVerificationExpires?: Date;
   forgetPasswordCode?: string;
   forgetPasswordExpires?: Date;
+  isResettingPassword?: boolean;
   passwordChangeTime?: Date;
 };

@@ -15,9 +15,11 @@ const createLoad = catchAsync(async (req, res) => {
   });
 });
 const getAllLoad = catchAsync(async (req, res) => {
-  const result = await loadService.getAllLoad();
+  const query = req.query;
+  const result = await loadService.getAllLoad(query);
   sendResponse(res, {
-    data: result,
+    data: result.result,
+    meta: result.meta,
     success: true,
     statusCode: 200,
     message: 'Loads  retrived successfully',

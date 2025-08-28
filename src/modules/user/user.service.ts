@@ -14,6 +14,7 @@ import generateOTPEmail from '../../util/generateOtpEmail';
 import { generateOtp } from '../../util/generateOtp';
 import { TUser } from './user.interface';
 import config from '../../config';
+import authUtil from '../auth/auth.utill';
 
 const createAdminToDB = async (
   payload: TUser,
@@ -155,7 +156,7 @@ const createDriverToDB = async (
     const result = await User.create([userInfo], { session });
     const { user, ...restDriverData } = driverData;
     const driverInfo = {
-      user: result[0]?._id,
+      user: result[0]?.id,
       ...restDriverData,
     };
 
@@ -169,13 +170,44 @@ const createDriverToDB = async (
       'Your verification code',
       generateOTPEmail(otp, name),
     );
-    console.log({ sendEmailTo });
+    console.log({ resulttt: result[0] });
     return result[0];
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
     throw error;
   }
+};
+
+const createSuperAdmin = async (payload: TUser) => {
+  const isSuperAdminExist = await User.findOne({
+    email: payload?.email,
+    role: 'super-admin',
+  });
+  if (isSuperAdminExist) {
+    throw new ApppError(StatusCodes.CONFLICT, 'Super admin already exist');
+  }
+  const hashedPassword = await bcrypt.hash(payload?.password, 10);
+  const userinfo = {
+    name: payload?.name || 'John Doe',
+    email: payload?.email || 'john.doe@example.com',
+    phone: payload?.phone || '1234567890',
+    password: hashedPassword,
+    role: 'super-admin',
+    isVerified: true,
+  };
+  const result = await User.create(userinfo);
+  const accessToken = authUtil.createToken(
+    {
+      id: result._id,
+      role: result.role,
+      username: result.name,
+      email: result.email,
+    },
+    config.jwt_token_secret,
+    config.token_expairsIn,
+  );
+  return { accessToken };
 };
 const getAllUsers = async () => {
   const result = await User.find();
@@ -192,14 +224,14 @@ const getUserProfile = async (userId: string) => {
       user: isUserExist.id,
     }).populate('user', '-password');
     return companyProfile;
-  }
-  if (isUserExist?.role === 'driver') {
+  } else if (isUserExist?.role === 'driver') {
     const driverProfile = await Driver.findOne({
       user: isUserExist.id,
     }).populate('user', '-password');
     return driverProfile;
+  } else {
+    return isUserExist;
   }
-  return isUserExist;
 };
 
 const userServices = {
@@ -208,6 +240,7 @@ const userServices = {
   createDriverToDB,
   getAllUsers,
   getUserProfile,
+  createSuperAdmin,
   // updateProfileData,
   // deleteSingleUser,
   // selfDistuct,

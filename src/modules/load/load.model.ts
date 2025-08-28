@@ -1,5 +1,12 @@
 import { Schema, model } from 'mongoose';
-import { IAddress, ICustomer, IDocument, ILoad } from './load.interface';
+import {
+  IAddress,
+  ICustomer,
+  IDocument,
+  ILoad,
+  IStatusTimeline,
+} from './load.interface';
+import { LoadPaymentStatusArray, LoadStatusArray } from './load.constant';
 
 const AddressSchema = new Schema<IAddress>({
   street: { type: String, required: true },
@@ -10,9 +17,23 @@ const AddressSchema = new Schema<IAddress>({
   country: { type: String, required: true },
 });
 
+const statusSchema = new Schema<IStatusTimeline>(
+  {
+    status: {
+      type: String,
+      enum: LoadStatusArray,
+      required: true,
+    },
+    timestamp: { type: Date, default: Date.now },
+    notes: { type: String }, // optional (e.g. "Load assigned to John Doe")
+    expectedDeliveryDate: { type: Date }, // optional (e.g. "Expected delivery date: 2023-05-15")
+  },
+  { _id: false },
+);
+
 const customerSchema = new Schema<ICustomer>({
-  name: { type: String, required: true },
-  email: { type: String, required: true },
+  name: { type: String },
+  email: { type: String },
   phone: { type: String },
 });
 
@@ -33,14 +54,7 @@ const LeadSchema = new Schema<ILoad>(
     deliveryAddress: { type: AddressSchema, required: true },
     loadStatus: {
       type: String,
-      enum: [
-        'Pending Assignment',
-        'Awaiting Pickup',
-        'En Route to Pickup',
-        'At Pickup',
-        'In Transit',
-        'Delivered',
-      ],
+      enum: LoadStatusArray,
       default: 'Pending Assignment',
     },
 
@@ -52,10 +66,12 @@ const LeadSchema = new Schema<ILoad>(
     totalDistance: { type: Number, required: true },
     ratePerMile: { type: Number, required: true },
     totalPayment: { type: Number },
+    companyId: { type: String, required: true, ref: 'Company' },
+    statusTimeline: [statusSchema],
 
     paymentStatus: {
       type: String,
-      enum: ['PENDING', 'PAID', 'FAILED'],
+      enum: LoadPaymentStatusArray,
       default: 'PENDING',
     },
     customerNotes: { type: String },

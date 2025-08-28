@@ -32,10 +32,38 @@ class QueryBuilder<T> {
     return this;
   }
   filter() {
-    if (this?.query?.filter) {
-      this.modelQuery = this?.modelQuery.find({ _id: this?.query?.filter });
+    const queryObj = { ...this?.query };
+    const excludeFields = ['search', 'page', 'limit', 'sortBy', 'sortOrder'];
+    excludeFields.forEach((el) => delete queryObj[el]);
+    if (Object.entries(queryObj).length) {
+      this.modelQuery = this?.modelQuery.find(queryObj);
     }
     return this;
+  }
+  paginate() {
+    const page = Number(this?.query?.page || 1);
+    const limit = Number(this?.query?.limit || 10);
+    const skip = (page - 1) * limit;
+    this.modelQuery = this.modelQuery.skip(skip).limit(limit);
+    return this;
+  }
+  async getMetaData() {
+    const page = Number(this?.query?.page || 1);
+    const limit = Number(this?.query?.limit || 10);
+
+    // Await the count query
+    const total = await this.modelQuery.model.countDocuments(
+      this.modelQuery.getFilter(),
+    );
+
+    const totalPage = Math.ceil(total / limit);
+
+    return {
+      page,
+      limit,
+      total,
+      totalPage,
+    };
   }
 }
 
