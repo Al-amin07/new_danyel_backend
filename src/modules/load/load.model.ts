@@ -12,7 +12,7 @@ const AddressSchema = new Schema<IAddress>({
 
 const customerSchema = new Schema<ICustomer>({
   name: { type: String, required: true },
-  email: { type: String, required: true },
+  email: { type: String },
   phone: { type: String },
 });
 
@@ -52,10 +52,10 @@ const LeadSchema = new Schema<ILoad>(
     totalDistance: { type: Number, required: true },
     ratePerMile: { type: Number, required: true },
     totalPayment: { type: Number },
-
+    companyId: { type: String, required: true, ref: 'Company' },
     paymentStatus: {
       type: String,
-      enum: ['PENDING', 'PAID', 'FAILED'],
+      enum: ['PENDING', 'PAID', 'REJECTED'],
       default: 'PENDING',
     },
     customerNotes: { type: String },

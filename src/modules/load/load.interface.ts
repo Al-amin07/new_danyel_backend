@@ -54,10 +54,10 @@ export interface ILoad {
   ratePerMile: number;
   totalPayment: number;
 
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+  paymentStatus: 'PENDING' | 'PAID' | 'REJECTED';
   customerNotes?: string;
   paymentDate?: Date;
-
+  companyId: string;
   assignedDriver?: Types.ObjectId;
 
   customer: ICustomer;

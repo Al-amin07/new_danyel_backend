@@ -1,4 +1,4 @@
-import { ZodError, ZodIssue } from "zod";
+import { ZodError, ZodIssue } from 'zod';
 
 const reformZodError = (err: ZodError) => {
   const errorSource = err.issues.map((issue: ZodIssue) => {
@@ -7,7 +7,11 @@ const reformZodError = (err: ZodError) => {
       message: issue.message,
     };
   });
-  return errorSource;
+  const errorMessage = errorSource.map((err) => `${err.path}`).join(', ');
+  return {
+    message: `Validation Error : ${errorMessage} is required`,
+    errorSource,
+  };
 };
 
 export default reformZodError;

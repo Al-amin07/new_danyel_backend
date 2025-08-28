@@ -29,6 +29,7 @@ const logIn = async (payload: { email: string; password: string }) => {
   }
   // Password check for email login
   const isPasswordmatch = await bcrypt.compare(password, user.password);
+  console.log({ user, isPasswordmatch });
   if (!isPasswordmatch) {
     throw new ApppError(StatusCodes.CONFLICT, 'Incorrect password!!');
   }
@@ -185,13 +186,8 @@ const forgetPassword = async (email: string) => {
   );
   return 'Reset password email sent successfully';
 };
-
-const resetPassword = async (
-  otp: string,
-  email: string,
-  newPassword: string,
-) => {
-  const user = await User.findOne({ email }).lean();
+const verifyForgetPasswordOtp = async (email: string, otp: string) => {
+  const user = await User.findOne({ email });
   if (!user) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
   }
@@ -201,6 +197,34 @@ const resetPassword = async (
   if (user.forgetPasswordExpires && user.forgetPasswordExpires < new Date()) {
     throw new ApppError(StatusCodes.UNAUTHORIZED, 'OTP has expired');
   }
+
+  await User.findOneAndUpdate(
+    { email },
+    {
+      forgetPasswordCode: '',
+      forgetPasswordExpires: new Date(0),
+      isResettingPassword: true,
+    },
+    { new: true },
+  );
+  const token = authUtil.createToken(
+    { email: user.email, role: user.role, id: user.id },
+    config.jwt_token_secret,
+    config.token_expairsIn,
+  );
+
+  return 'Otp verified';
+};
+
+const resetPassword = async (email: string, newPassword: string) => {
+  const user = await User.findOne({ email }).lean();
+  if (!user) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  if (user.forgetPasswordCode || !user?.isResettingPassword) {
+    throw new ApppError(StatusCodes.UNAUTHORIZED, 'Verify your otp first');
+  }
+
   const newPasswordHash = await bcrypt.hash(
     newPassword,
     Number(config.bcrypt_salt),
@@ -212,8 +236,7 @@ const resetPassword = async (
     {
       password: newPasswordHash,
       passwordChangeTime: new Date(),
-      forgetPasswordCode: '',
-      forgetPasswordExpires: new Date(0),
+      isResettingPassword: false,
     },
     { new: true },
   );
@@ -321,5 +344,6 @@ const authServices = {
   resetPassword,
   sendVerifyEmailOtpAgain,
   verifyOtp,
+  verifyForgetPasswordOtp,
 };
 export default authServices;

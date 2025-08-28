@@ -7,8 +7,6 @@ import { User } from '../modules/user/user.model';
 import idConverter from '../util/idConvirter';
 import ApppError from '../error/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { TUser } from '../modules/user/user.interface';
-import { Types } from 'mongoose';
 
 const auth = (...requeredUserRole: TUserRole[]) => {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -29,7 +27,7 @@ const auth = (...requeredUserRole: TUserRole[]) => {
       );
     }
 
-    const { id, role, iat } = decoded as JwtPayload;
+    const { id, role } = decoded as JwtPayload;
 
     // Check if the user's role is allowed
     if (requeredUserRole.length && !requeredUserRole.includes(role)) {

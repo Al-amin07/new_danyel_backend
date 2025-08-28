@@ -1,11 +1,12 @@
-import { TErrorSource } from "../constents";
+import { TErrorSource } from '../constents';
 
 const dublicateErrorHandellerr = (err: any) => {
   const match = err.errorResponse.errmsg.match(/"([^"]*)"/);
-  const errorMessage = match ? match[1] : "No match found";
+  const errorMessage = match ? match[1] : 'No match found';
 
   const statuscode = 400;
-  const message = 'dublicet entry error';
+  const message = `Dublicet entry error : ${errorMessage} already exist`;
+  console.log({ errorMessage, err });
   const errorSource: TErrorSource = [
     {
       path: '',
@@ -19,4 +20,4 @@ const dublicateErrorHandellerr = (err: any) => {
   };
 };
 
-export default dublicateErrorHandellerr
+export default dublicateErrorHandellerr;

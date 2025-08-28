@@ -5,6 +5,7 @@ import sendResponse from '../../util/sendResponse';
 import authServices from './auth.service';
 
 const logIn = catchAsync(async (req, res) => {
+  console.log(req.body);
   const result = await authServices.logIn(req.body);
   const { accessToken, refreshToken } = result;
   sendResponse(res, {
@@ -72,9 +73,9 @@ const forgetPassword = catchAsync(async (req, res) => {
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-  const { otp, newPassword, email } = req.body;
+  const { newPassword, email } = req.body;
 
-  const result = await authServices.resetPassword(otp, email, newPassword);
+  const result = await authServices.resetPassword(email, newPassword);
 
   res.status(200).json({
     success: true,
@@ -86,6 +87,14 @@ const resetPassword = catchAsync(async (req, res) => {
 const verifyOtp = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
   const result = await authServices.verifyOtp(email, otp);
+  res.status(StatusCodes.CREATED).json({
+    message: 'Otp verified successfully',
+    data: result,
+  });
+});
+const verifyForgetPasswordOtp = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const result = await authServices.verifyForgetPasswordOtp(email, otp);
   res.status(StatusCodes.CREATED).json({
     message: 'Otp verified successfully',
     data: result,
@@ -109,5 +118,6 @@ const authController = {
   resetPassword,
   sendVerifyOtpAgain,
   verifyOtp,
+  verifyForgetPasswordOtp,
 };
 export default authController;

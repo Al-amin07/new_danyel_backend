@@ -10,7 +10,7 @@ const UserSchema = new Schema<TUser>(
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'company', 'driver'],
+      enum: ['admin', 'company', 'driver', 'super-admin'],
       required: true,
       default: userRole.company,
     },
@@ -20,6 +20,7 @@ const UserSchema = new Schema<TUser>(
     isProfileUpdate: { type: Boolean, default: false },
     emailVerificationCode: { type: String },
     emailVerificationExpires: { type: Date },
+    isResettingPassword: { type: Boolean },
     forgetPasswordCode: { type: String },
     forgetPasswordExpires: { type: Date },
     passwordChangeTime: { type: Date },

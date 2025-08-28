@@ -5,24 +5,56 @@ import { IAddress, ILoad } from './load.interface';
 import { LoadModel } from './load.model';
 import { Driver } from '../Driver/driver.model';
 import QueryBuilder from '../../builder/QueryBuilder';
+import { Company } from '../Company/company.model';
+import { StatusCodes } from 'http-status-codes';
 
 const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
+  if (!mongoose.Types.ObjectId.isValid(payload?.companyId)) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid Company ID');
+  }
+
+  const isCompanyExist = await Company.findById(payload?.companyId);
+  if (!isCompanyExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found!!!');
+  }
+  if (!payload?.totalPayment) {
+    payload.totalPayment = payload.totalDistance * payload.ratePerMile;
+  }
+
   if (!files || files.length === 0) {
-    throw new ApppError(404, 'No files uploaded');
+    throw new ApppError(StatusCodes.NOT_FOUND, 'No files uploaded');
   }
 
   const documents = files.map((file) => ({
     type: file?.mimetype,
     url: `${config.server_url}/uploads/${file?.filename}`,
   }));
-  console.log({ documents, payload });
-
-  if (!payload?.totalPayment) {
-    payload.totalPayment = payload.totalDistance * payload.ratePerMile;
+  const isLoadExist = await LoadModel.findOne({ loadId: payload?.loadId });
+  if (isLoadExist) {
+    throw new ApppError(400, 'Duplicate Load Id');
   }
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const result = await LoadModel.create([{ ...payload, documents }], {
+      session,
+    });
+    await Company.findByIdAndUpdate(
+      payload?.companyId,
+      { $push: { loads: payload?.companyId } },
+      { new: true, session },
+    );
 
-  const result = await LoadModel.create({ ...payload, documents });
-  return result;
+    await session.commitTransaction();
+    session.endSession();
+
+    console.log({ resulttt: result[0] });
+    return result[0];
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
 const getAllLoad = async (query: Record<string, unknown>) => {
@@ -43,7 +75,9 @@ const getAllLoad = async (query: Record<string, unknown>) => {
     .filter()
     .sort()
     .paginate();
-  const result = await loadQuery.modelQuery.populate('assignedDriver');
+  const result = await loadQuery.modelQuery
+    .populate('assignedDriver')
+    .populate('companyId');
   const meta = await loadQuery.getMetaData();
   return {
     result,
@@ -113,6 +147,7 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!isLoadExist) {
     throw new ApppError(404, 'Load not found');
   }
+
   if (!mongoose.Types.ObjectId.isValid(payload?.driverId)) {
     throw new ApppError(400, 'Invalid driver ID');
   }
@@ -120,10 +155,11 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!isDriverExist) {
     throw new ApppError(404, 'Driver not found');
   }
+  console.log({ isLoadExist, isDriverExist }, 'From Here');
   if (
     isDriverExist?.loads &&
     isDriverExist.loads.length > 0 &&
-    isDriverExist.loads.includes(new mongoose.Types.ObjectId(loadId))
+    isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
   ) {
     throw new ApppError(400, 'This load is already assigned to this driver');
   }
@@ -145,7 +181,9 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
         $push: { loads: loadId },
       },
       { session },
-    );
+    )
+      // .populate('assignedDriver')
+      .populate('companyId');
     await session.commitTransaction();
     session.endSession();
     return result;
@@ -158,21 +196,34 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
 
 const updateLoadStatus = async (
   loadId: string,
-  payload: { status: string },
+  payload: { loadStatus?: string; paymentStatus?: string; paymentDate?: Date },
 ) => {
   if (!mongoose.Types.ObjectId.isValid(loadId)) {
-    throw new ApppError(400, 'Invalid load ID');
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid load ID');
+  }
+  if (!payload?.loadStatus && !payload?.paymentStatus) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'Enter Load Status or Payment Status',
+    );
+  }
+  if (payload?.paymentStatus === 'PAID') {
+    payload.paymentDate = new Date();
   }
   const isLoadExist = await LoadModel.findById(loadId).lean();
   if (!isLoadExist) {
-    throw new ApppError(404, 'Load not found');
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Load not found');
   }
-  if (isLoadExist.loadStatus === payload?.status) {
-    throw new ApppError(400, `Load is already in ${payload?.status} status`);
+  if (isLoadExist.loadStatus === payload?.loadStatus) {
+    throw new ApppError(
+      400,
+      `Load is already in ${payload?.loadStatus} status`,
+    );
   }
+
   const result = await LoadModel.findByIdAndUpdate(
     loadId,
-    { loadStatus: payload?.status },
+    { ...payload },
     { new: true },
   );
   return result;
