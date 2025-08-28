@@ -6,11 +6,7 @@ import {
   ILoad,
   IStatusTimeline,
 } from './load.interface';
-import {
-  LoadPaymentStatusArray,
-  LoadStatusArray,
-  TLoadStatus,
-} from './load.constant';
+import { LoadPaymentStatusArray, LoadStatusArray } from './load.constant';
 
 const AddressSchema = new Schema<IAddress>({
   street: { type: String, required: true },
@@ -36,7 +32,7 @@ const statusSchema = new Schema<IStatusTimeline>(
 );
 
 const customerSchema = new Schema<ICustomer>({
-  name: { type: String, required: true },
+  name: { type: String },
   email: { type: String },
   phone: { type: String },
 });

@@ -22,9 +22,7 @@ const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found!!!');
   }
 
-  if (!payload?.totalPayment) {
-    payload.totalPayment = payload.totalDistance * payload.ratePerMile;
-  }
+  payload.totalPayment = payload.totalDistance * payload.ratePerMile;
 
   if (!files || files.length === 0) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'No files uploaded');
