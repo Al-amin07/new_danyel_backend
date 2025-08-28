@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { TLoadStatus, TLoadPaymentStatus } from './load.constant';
 
 // Address Type
 export interface IAddress {
@@ -15,17 +16,17 @@ export interface IDocument {
   url: string;
 }
 
-enum ELoadStatus {
-  'Pending Assignment',
-  'In Transit',
-  'At Pickup',
-  'En Route to Pickup',
-  'Delivered',
-}
 export interface ICustomer {
   name: string;
   email: string;
   phone?: string;
+}
+
+export interface IStatusTimeline {
+  status: TLoadStatus;
+  timestamp: Date;
+  notes?: string;
+  expectedDeliveryDate?: Date;
 }
 
 export interface ILoad {
@@ -35,12 +36,7 @@ export interface ILoad {
   loadType: string;
   specialInstructions?: string;
 
-  loadStatus:
-    | 'Pending Assignment'
-    | 'In Transit'
-    | 'At Pickup'
-    | 'En Route to Pickup'
-    | 'Delivered';
+  loadStatus: TLoadStatus;
 
   pickupAddress: IAddress;
   deliveryAddress: IAddress;
@@ -54,12 +50,12 @@ export interface ILoad {
   ratePerMile: number;
   totalPayment: number;
 
-  paymentStatus: 'PENDING' | 'PAID' | 'REJECTED';
+  paymentStatus: TLoadPaymentStatus;
   customerNotes?: string;
   paymentDate?: Date;
   companyId: string;
   assignedDriver?: Types.ObjectId;
-
+  statusTimeline: IStatusTimeline[];
   customer: ICustomer;
 
   documents: IDocument[];

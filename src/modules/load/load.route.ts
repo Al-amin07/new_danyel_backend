@@ -10,6 +10,7 @@ const route = Router();
 
 route.post(
   '/create-load',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
   upload.array('documents', 10),
   (req, res, next) => {
     req.body = JSON.parse(req.body.data);
@@ -25,6 +26,7 @@ route.get('/generate-loadId', loadController.generateLoadId);
 route.get('/:loadId', loadController.getSingleLoad);
 route.patch(
   '/:loadId',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
   upload.array('documents', 10),
   (req, res, next) => {
     req.body = JSON.parse(req.body.data);

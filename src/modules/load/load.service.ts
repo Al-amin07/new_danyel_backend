@@ -1,22 +1,27 @@
 import mongoose from 'mongoose';
 import config from '../../config';
 import ApppError from '../../error/AppError';
-import { IAddress, ILoad } from './load.interface';
+import { IAddress, ILoad, IStatusTimeline } from './load.interface';
 import { LoadModel } from './load.model';
 import { Driver } from '../Driver/driver.model';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { Company } from '../Company/company.model';
 import { StatusCodes } from 'http-status-codes';
+import { getLoadNote } from './load.constant';
 
 const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
   if (!mongoose.Types.ObjectId.isValid(payload?.companyId)) {
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid Company ID');
   }
-
+  const isLoadExist = await LoadModel.findOne({ loadId: payload?.loadId });
+  if (isLoadExist) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Duplicate Load Id');
+  }
   const isCompanyExist = await Company.findById(payload?.companyId);
   if (!isCompanyExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found!!!');
   }
+
   if (!payload?.totalPayment) {
     payload.totalPayment = payload.totalDistance * payload.ratePerMile;
   }
@@ -29,19 +34,30 @@ const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
     type: file?.mimetype,
     url: `${config.server_url}/uploads/${file?.filename}`,
   }));
-  const isLoadExist = await LoadModel.findOne({ loadId: payload?.loadId });
-  if (isLoadExist) {
-    throw new ApppError(400, 'Duplicate Load Id');
-  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     const result = await LoadModel.create([{ ...payload, documents }], {
       session,
     });
+    if (payload?.assignedDriver) {
+      if (!mongoose.Types.ObjectId.isValid(payload?.assignedDriver)) {
+        throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid driver ID');
+      }
+      const isDriverExist = await Driver.findById(payload?.assignedDriver);
+      if (!isDriverExist) {
+        throw new ApppError(404, 'Driver not found');
+      }
+      await Driver.findByIdAndUpdate(
+        payload?.assignedDriver,
+        { $addToSet: { loads: result[0]._id } },
+        { new: true, session },
+      );
+    }
     await Company.findByIdAndUpdate(
       payload?.companyId,
-      { $push: { loads: payload?.companyId } },
+      { $addToSet: { loads: result[0]._id } },
       { new: true, session },
     );
 
@@ -76,8 +92,15 @@ const getAllLoad = async (query: Record<string, unknown>) => {
     .sort()
     .paginate();
   const result = await loadQuery.modelQuery
-    .populate('assignedDriver')
-    .populate('companyId');
+    .populate({
+      path: 'assignedDriver',
+      select: 'name email phone',
+      populate: { path: 'user', select: 'name email profileImage role' },
+    })
+    .populate({
+      path: 'companyId',
+      populate: { path: 'user', select: 'name email profileImage role' },
+    });
   const meta = await loadQuery.getMetaData();
   return {
     result,
@@ -86,7 +109,16 @@ const getAllLoad = async (query: Record<string, unknown>) => {
 };
 
 const getSingleLoad = async (id: string) => {
-  const result = await LoadModel.findById(id).populate('assignedDriver');
+  const result = await LoadModel.findById(id)
+    .populate({
+      path: 'assignedDriver',
+      select: 'name email phone',
+      populate: { path: 'user', select: 'name email profileImage role' },
+    })
+    .populate({
+      path: 'companyId',
+      populate: { path: 'user', select: 'name email profileImage role' },
+    });
   if (!result) {
     throw new ApppError(404, 'Load not found');
   }
@@ -98,10 +130,17 @@ const updateLoadToDB = async (
   payload: Partial<ILoad>,
   files: Express.Multer.File[],
 ) => {
-  const { pickupAddress, deliveryAddress, ...loadData } = payload;
+  const { pickupAddress, deliveryAddress, customer, ...loadData } = payload;
   const isLoadExist = (await LoadModel.findById(id)) as ILoad;
   if (!isLoadExist) {
     throw new ApppError(404, 'Load not found');
+  }
+  const newDistance = payload.totalDistance ?? isLoadExist.totalDistance;
+  const newRate = payload.ratePerMile ?? isLoadExist.ratePerMile;
+
+  // If totalPayment not provided, calculate it
+  if (!payload.totalPayment) {
+    payload.totalPayment = newDistance * newRate;
   }
   const updatedLoad: Record<string, unknown> = { ...loadData };
   if (pickupAddress) {
@@ -114,6 +153,12 @@ const updateLoadToDB = async (
       updatedLoad[`deliveryAddress.${key}`] = deliveryAddress[key];
     });
   }
+  if (customer) {
+    (Object.keys(customer) as (keyof {})[]).forEach((key) => {
+      updatedLoad[`customer.${key}`] = customer[key];
+    });
+  }
+
   let documents: { type: string; url: string }[] = [];
   if (files.length > 0) {
     documents = files.map((file) => {
@@ -151,7 +196,9 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!mongoose.Types.ObjectId.isValid(payload?.driverId)) {
     throw new ApppError(400, 'Invalid driver ID');
   }
-  const isDriverExist = await Driver.findById(payload?.driverId).lean();
+  const isDriverExist = await Driver.findById(payload?.driverId)
+    .lean()
+    .populate({ path: 'user', select: 'name email' });
   if (!isDriverExist) {
     throw new ApppError(404, 'Driver not found');
   }
@@ -164,6 +211,11 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
     throw new ApppError(400, 'This load is already assigned to this driver');
   }
 
+  const statusTimeline = {
+    status: 'Assigned',
+    timestamp: new Date(),
+    notes: `Load assigned to ${(isDriverExist?.user as any)?.name}`,
+  };
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -171,19 +223,18 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
       loadId,
       {
         assignedDriver: payload?.driverId,
-        loadStatus: 'Awaiting Pickup',
+        loadStatus: 'Assigned',
+        $push: { statusTimeline },
       },
       { new: true, session },
     );
     await Driver.findByIdAndUpdate(
       payload?.driverId,
       {
-        $push: { loads: loadId },
+        $addToSet: { loads: loadId },
       },
       { session },
-    )
-      // .populate('assignedDriver')
-      .populate('companyId');
+    ).populate('companyId');
     await session.commitTransaction();
     session.endSession();
     return result;
@@ -194,10 +245,7 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   }
 };
 
-const updateLoadStatus = async (
-  loadId: string,
-  payload: { loadStatus?: string; paymentStatus?: string; paymentDate?: Date },
-) => {
+const updateLoadStatus = async (loadId: string, payload: Partial<ILoad>) => {
   if (!mongoose.Types.ObjectId.isValid(loadId)) {
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid load ID');
   }
@@ -207,10 +255,13 @@ const updateLoadStatus = async (
       'Enter Load Status or Payment Status',
     );
   }
-  if (payload?.paymentStatus === 'PAID') {
-    payload.paymentDate = new Date();
-  }
-  const isLoadExist = await LoadModel.findById(loadId).lean();
+
+  const isLoadExist = await LoadModel.findById(loadId)
+    .lean()
+    .populate({
+      path: 'assignedDriver',
+      populate: { path: 'user', select: 'name' },
+    });
   if (!isLoadExist) {
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Load not found');
   }
@@ -219,6 +270,31 @@ const updateLoadStatus = async (
       400,
       `Load is already in ${payload?.loadStatus} status`,
     );
+  }
+
+  if (payload?.paymentStatus === 'PAID') {
+    payload.paymentDate = new Date();
+  }
+  if (payload?.loadStatus) {
+    const statusTimeline: IStatusTimeline = {
+      status: payload?.loadStatus,
+      timestamp: new Date(),
+      notes: getLoadNote(
+        payload?.loadStatus,
+        (isLoadExist.assignedDriver as any).name,
+      ),
+    };
+    if (payload?.loadStatus === 'In Transit') {
+      statusTimeline.expectedDeliveryDate = new Date(
+        new Date().getTime() + 12 * 60 * 60 * 1000,
+      );
+    }
+    const result = await LoadModel.findByIdAndUpdate(
+      loadId,
+      { ...payload, $push: { statusTimeline } },
+      { new: true },
+    );
+    return result;
   }
 
   const result = await LoadModel.findByIdAndUpdate(
