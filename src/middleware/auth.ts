@@ -43,7 +43,10 @@ const auth = (...requeredUserRole: TUserRole[]) => {
     });
 
     if (!isUserExist) {
-      throw new Error('Unauthorized User: Forbidden Access');
+      throw new ApppError(
+        StatusCodes.NOT_FOUND,
+        'Unauthorized User: Forbidden Access',
+      );
     }
 
     if (isUserExist.isBlocked || isUserExist.isDeleted) {

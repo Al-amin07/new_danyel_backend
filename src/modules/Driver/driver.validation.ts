@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { z } from 'zod';
 
 // Custom regex for MongoDB ObjectId (24 hex chars)
@@ -19,10 +20,30 @@ export const loadStatusValidationSchema = z.object({
   }),
 });
 export const assignLoadValidationSchema = z.object({
-  loadId: z
-    .string()
-    .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),
-  driverId: z
-    .string()
-    .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),
+  body: z.object({
+    loadId: z
+      .string()
+      .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),
+  }),
 });
+
+// export const objectIdInstance = z.instanceof(Types.ObjectId);
+
+export const reviewDriverSchema = z.object({
+  body: z.object({
+    review: z.string(),
+    rating: z.number(),
+    companyId: z
+      .string()
+      .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),
+    loadId: z
+      .string()
+      .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),
+  }),
+});
+
+export const driverValidationSchema = {
+  reviewDriverSchema,
+  assignLoadValidationSchema,
+  loadStatusValidationSchema,
+};

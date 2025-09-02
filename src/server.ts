@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import app from './app';
-import { Server } from 'http';
+import { createServer, Server } from 'http';
 // import adminSeeder from './seeder/adminSeeder';
 import config from './config';
+import { initSocket } from './socket';
 
 let server: Server;
 
@@ -14,9 +15,12 @@ async function main() {
     });
     console.log('✅ MongoDB connected!');
 
-    // await adminSeeder();
+    // Sock et IO config.
+    server = createServer(app);
+    // Init Socket.IO
+    initSocket(server);
 
-    server = app.listen(config.port, () => {
+    server.listen(config.port, () => {
       console.log(`APP NAME server app listening on port ${config.port}`);
     });
   } catch (err: any) {

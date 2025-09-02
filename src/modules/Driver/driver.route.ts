@@ -4,9 +4,15 @@ import { driverController } from './driver.controller';
 import auth from '../../middleware/auth';
 import { userRole } from '../../constents';
 import validator from '../../middleware/validator';
-import { loadStatusValidationSchema } from './driver.validation';
+import { driverValidationSchema } from './driver.validation';
 
 const driverRoute = express.Router();
+
+driverRoute.get(
+  '/',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
+  driverController.getAllDriver,
+);
 
 driverRoute.patch(
   '/update-profile',
@@ -17,7 +23,9 @@ driverRoute.patch(
     { name: 'vehicleRegistration', maxCount: 1 },
   ]),
   (req, res, next) => {
-    req.body = JSON.parse(req.body.data);
+    if (req?.body?.data) {
+      req.body = JSON.parse(req.body?.data || {});
+    }
     next();
   },
   driverController.updateDriverProfile,
@@ -25,14 +33,27 @@ driverRoute.patch(
 
 driverRoute.patch(
   '/assign-load',
+  validator(driverValidationSchema.assignLoadValidationSchema),
   auth(userRole.driver),
+
   driverController.assignLoadToDriver,
 );
 driverRoute.patch(
   '/update-load-status',
-  validator(loadStatusValidationSchema),
+  validator(driverValidationSchema.loadStatusValidationSchema),
   auth(userRole.driver),
   driverController.updateLoadStatus,
+);
+driverRoute.patch(
+  '/:id/review',
+  validator(driverValidationSchema.reviewDriverSchema),
+  driverController.reviewDriver,
+);
+
+driverRoute.patch(
+  '/update-driver-status',
+  auth(userRole.driver),
+  driverController.updateDriverStatus,
 );
 
 export default driverRoute;

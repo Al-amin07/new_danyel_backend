@@ -9,7 +9,11 @@ import { Company } from '../Company/company.model';
 import { StatusCodes } from 'http-status-codes';
 import { getLoadNote } from './load.constant';
 
-const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
+const createLoadToDB = async (
+  userId: string,
+  payload: ILoad,
+  files: Express.Multer.File[],
+) => {
   if (!mongoose.Types.ObjectId.isValid(payload?.companyId)) {
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid Company ID');
   }
@@ -17,7 +21,7 @@ const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
   if (isLoadExist) {
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Duplicate Load Id');
   }
-  const isCompanyExist = await Company.findById(payload?.companyId);
+  const isCompanyExist = await Company.findOne({ user: userId });
   if (!isCompanyExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found!!!');
   }
@@ -32,6 +36,24 @@ const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
     type: file?.mimetype,
     url: `${config.server_url}/uploads/${file?.filename}`,
   }));
+  if (payload?.assignedDriver) {
+    if (!mongoose.Types.ObjectId.isValid(payload?.assignedDriver)) {
+      throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid driver ID');
+    }
+    const isDriverExist = await Driver.findById(
+      payload?.assignedDriver,
+    ).populate('user');
+    if (!isDriverExist) {
+      throw new ApppError(404, 'Driver not found');
+    }
+    const statusTimeline: IStatusTimeline = {
+      status: 'Assigned',
+      timestamp: new Date(),
+      notes: `Load assigned to ${(isDriverExist?.user as any)?.name}`,
+    };
+    payload.statusTimeline = [statusTimeline];
+    payload.loadStatus = 'Assigned';
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -40,13 +62,6 @@ const createLoadToDB = async (payload: ILoad, files: Express.Multer.File[]) => {
       session,
     });
     if (payload?.assignedDriver) {
-      if (!mongoose.Types.ObjectId.isValid(payload?.assignedDriver)) {
-        throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid driver ID');
-      }
-      const isDriverExist = await Driver.findById(payload?.assignedDriver);
-      if (!isDriverExist) {
-        throw new ApppError(404, 'Driver not found');
-      }
       await Driver.findByIdAndUpdate(
         payload?.assignedDriver,
         { $addToSet: { loads: result[0]._id } },
@@ -135,12 +150,8 @@ const updateLoadToDB = async (
   }
   const newDistance = payload.totalDistance ?? isLoadExist.totalDistance;
   const newRate = payload.ratePerMile ?? isLoadExist.ratePerMile;
-
-  // If totalPayment not provided, calculate it
-  if (!payload.totalPayment) {
-    payload.totalPayment = newDistance * newRate;
-  }
   const updatedLoad: Record<string, unknown> = { ...loadData };
+  updatedLoad.totalPayment = newDistance * newRate;
   if (pickupAddress) {
     (Object.keys(pickupAddress) as (keyof IAddress)[]).forEach((key) => {
       updatedLoad[`pickupAddress.${key}`] = pickupAddress[key];
@@ -167,7 +178,7 @@ const updateLoadToDB = async (
     });
   }
 
-  console.log({ documents });
+  // console.log({ documents });
 
   const result = await LoadModel.findByIdAndUpdate(
     id,

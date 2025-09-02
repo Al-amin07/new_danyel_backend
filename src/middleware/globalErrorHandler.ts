@@ -4,6 +4,7 @@ import reformZodError from '../error/zoodError';
 import mongoseErrorHandeller from '../error/mongooseErrorHandler';
 import dublicateErrorHandellerr from '../error/duplicateError';
 import { TErrorSource } from '../constents';
+import ApppError from '../error/AppError';
 
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
   // setting default value
@@ -32,6 +33,15 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     statusCode = dublicateErrorHandeller.statuscode;
     message = dublicateErrorHandeller.message;
     errorSource = dublicateErrorHandeller.errorSource;
+  } else if (err instanceof ApppError) {
+    statusCode = err?.statusCode;
+    message = err.message;
+    errorSource = [
+      {
+        path: '',
+        message: err?.message,
+      },
+    ];
   } else if (err instanceof Error) {
     statusCode = 500;
     message = err.message;

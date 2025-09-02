@@ -311,7 +311,7 @@ const verifyOtp = async (email: string, otp: string) => {
   user.lastLoggedin = new Date();
   const updatedUser = await User.findOneAndUpdate({ email }, user, {
     new: true,
-  });
+  }).select('-password');
 
   const tokenizeData = {
     id: user._id,

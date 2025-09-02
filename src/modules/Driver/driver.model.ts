@@ -6,6 +6,7 @@ import {
   EAvailability,
   ILocation,
   IFileType,
+  IReview,
 } from './driver.interface';
 
 // Sub-schema for Location
@@ -18,6 +19,13 @@ const LocationSchema = new Schema<ILocation>({
 const FileSchema = new Schema<IFileType>({
   url: { type: String, required: true },
   type: { type: String, required: true },
+});
+
+const ReviewSchema = new Schema<IReview>({
+  review: { type: String },
+  rating: { type: Number, required: true },
+  companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
+  loadId: { type: Schema.Types.ObjectId, ref: 'Load', required: true },
 });
 
 const DriverSchema = new Schema<IDriver>(
@@ -51,6 +59,9 @@ const DriverSchema = new Schema<IDriver>(
 
     experience: { type: Number },
     otherInfo: { type: String },
+    reviews: [ReviewSchema],
+    averageRating: { type: Number, default: 0 },
+    status: { type: Boolean, default: true },
   },
   {
     timestamps: true,

@@ -74,6 +74,13 @@ export enum EAvailability {
   AVAILABLE = 'Available',
 }
 
+export interface IReview {
+  review: string;
+  rating: number;
+  companyId: Types.ObjectId;
+  loadId: Types.ObjectId;
+}
+
 export interface IDriver extends Document {
   user: Types.ObjectId;
   location?: ILocation;
@@ -94,6 +101,9 @@ export interface IDriver extends Document {
 
   experience?: number;
   otherInfo?: string; // any extra info
+  reviews?: IReview[];
+  averageRating?: number;
+  status: boolean;
 }
 
 export interface IFileType {

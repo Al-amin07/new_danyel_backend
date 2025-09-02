@@ -8,7 +8,7 @@ export type TUser = {
   role: TUserRole;
   isDeleted: boolean;
   isBlocked: boolean;
-  profileImage: string;
+  profileImage?: string;
   isProfileUpdate?: boolean;
   lastLoggedin?: Date;
   isVerified: boolean;

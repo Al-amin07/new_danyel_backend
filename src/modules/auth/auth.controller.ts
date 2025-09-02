@@ -5,11 +5,10 @@ import sendResponse from '../../util/sendResponse';
 import authServices from './auth.service';
 
 const logIn = catchAsync(async (req, res) => {
-  console.log(req.body);
   const result = await authServices.logIn(req.body);
   const { accessToken, refreshToken } = result;
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: 'user logged in successfully',
     data: {
@@ -45,7 +44,7 @@ const changePassword = catchAsync(async (req, res) => {
     newPassword,
   );
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
     message: 'password changed successfully',
     data: result,
@@ -55,10 +54,11 @@ const refreshToken = catchAsync(async (req, res) => {
   const { refreshToken } = req.cookies;
   const result = await authServices.refreshToken(refreshToken);
 
-  res.status(200).json({
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
     success: true,
-    message: 'log token refreshed',
-    body: result,
+    message: 'token refreshed successfully',
+    data: result,
   });
 });
 
@@ -77,17 +77,20 @@ const resetPassword = catchAsync(async (req, res) => {
 
   const result = await authServices.resetPassword(email, newPassword);
 
-  res.status(200).json({
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
     success: true,
-    message: 'password changed',
-    body: result,
+    message: 'password reset successfully',
+    data: result,
   });
 });
 
 const verifyOtp = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
   const result = await authServices.verifyOtp(email, otp);
-  res.status(StatusCodes.CREATED).json({
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
     message: 'Otp verified successfully',
     data: result,
   });
@@ -95,7 +98,9 @@ const verifyOtp = catchAsync(async (req, res) => {
 const verifyForgetPasswordOtp = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
   const result = await authServices.verifyForgetPasswordOtp(email, otp);
-  res.status(StatusCodes.CREATED).json({
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
     message: 'Otp verified successfully',
     data: result,
   });
@@ -103,8 +108,10 @@ const verifyForgetPasswordOtp = catchAsync(async (req, res) => {
 const sendVerifyOtpAgain = catchAsync(async (req, res) => {
   const { email } = req.body;
   const result = await authServices.sendVerifyEmailOtpAgain(email);
-  res.status(StatusCodes.CREATED).json({
-    message: 'Otp code  send to your email successfully',
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Otp sent successfully',
     data: result,
   });
 });

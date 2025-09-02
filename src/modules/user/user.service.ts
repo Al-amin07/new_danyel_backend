@@ -222,12 +222,17 @@ const getUserProfile = async (userId: string) => {
   if (isUserExist?.role === 'company') {
     const companyProfile = await Company.findOne({
       user: isUserExist.id,
-    }).populate('user', '-password');
+    })
+      .populate('user', '-password')
+      .populate('loads');
     return companyProfile;
   } else if (isUserExist?.role === 'driver') {
     const driverProfile = await Driver.findOne({
       user: isUserExist.id,
-    }).populate('user', '-password');
+    })
+      .populate('user', '-password')
+      .populate('loads')
+      .populate('reviews.loadId');
     return driverProfile;
   } else {
     return isUserExist;
