@@ -1,6 +1,7 @@
 // src/socket.ts
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { Message } from './modules/message/message.model';
 
 let io: SocketIOServer;
 
@@ -24,11 +25,24 @@ export const initSocket = (server: HTTPServer) => {
     });
 
     // Send message
-    socket.on('send_message', (data) => {
+    socket.on('send_message', async (data) => {
       const { senderId, receiverId, text } = data;
       console.log({ from: data });
       const receiverSocketId = onlineUsers[receiverId];
+      // const message = await Message.create({ senderId, receiverId, text });
+
+      // 2️⃣ Send real-time if online
+
+      // if (receiverSocketId) {
+      //   io.to(receiverSocketId).emit('receive_message', {
+      //     _id: message._id,
+      //     senderId,
+      //     text,
+      //     createdAt: message.createdAt,
+      //   });
+      // }
       if (receiverSocketId) {
+        console.log('Event trigger', receiverSocketId);
         io.to(receiverSocketId).emit('receive_message', { senderId, text });
       }
     });

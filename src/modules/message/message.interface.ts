@@ -5,4 +5,5 @@ export interface IMessage {
   receiver: Types.ObjectId;
   text: string;
   isRead: boolean;
+  createdAt?: Date;
 }
