@@ -24,28 +24,54 @@ export const initSocket = (server: HTTPServer) => {
       console.log(`✅ User ${userId} registered`);
     });
 
-    // Send message
     socket.on('send_message', async (data) => {
       const { senderId, receiverId, text } = data;
-      console.log({ from: data });
-      const receiverSocketId = onlineUsers[receiverId];
-      // const message = await Message.create({ senderId, receiverId, text });
 
-      // 2️⃣ Send real-time if online
+      try {
+        // 1️⃣ Save to database
+        const message = await Message.create({
+          sender: senderId,
+          receiver: receiverId,
+          text,
+        });
 
-      // if (receiverSocketId) {
-      //   io.to(receiverSocketId).emit('receive_message', {
-      //     _id: message._id,
-      //     senderId,
-      //     text,
-      //     createdAt: message.createdAt,
-      //   });
-      // }
-      if (receiverSocketId) {
-        console.log('Event trigger', receiverSocketId);
-        io.to(receiverSocketId).emit('receive_message', { senderId, text });
+        // 2️⃣ Send real-time to receiver (if online)
+        const receiverSocketId = onlineUsers[receiverId];
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit('receive_message', {
+            _id: message._id,
+            senderId,
+            receiverId,
+            text: message.text,
+            createdAt: message.createdAt,
+          });
+        }
+
+        // 3️⃣ Optionally: also send back to sender (to update UI instantly)
+        socket.emit('message_saved', {
+          _id: message._id,
+          senderId,
+          receiverId,
+          text: message.text,
+          createdAt: message.createdAt,
+        });
+      } catch (err) {
+        console.error('❌ Error saving message:', err);
+        socket.emit('message_error', { error: 'Message could not be saved' });
       }
     });
+
+    // Send message
+    // socket.on('send_message', async (data) => {
+    //   const { senderId, receiverId, text } = data;
+    //   console.log({ from: data });
+    //   const receiverSocketId = onlineUsers[receiverId];
+
+    //   if (receiverSocketId) {
+    //     console.log('Event trigger', receiverSocketId);
+    //     io.to(receiverSocketId).emit('receive_message', { senderId, text });
+    //   }
+    // });
 
     // Send notification
     socket.on('send_notification', (data) => {

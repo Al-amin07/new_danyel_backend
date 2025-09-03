@@ -6,6 +6,7 @@ import profileRoute from '../modules/Profile/profile.route';
 import driverRoute from '../modules/Driver/driver.route';
 import { loadRoute } from '../modules/load/load.route';
 import { supportRoute } from '../modules/support/support.route';
+import { messageRoute } from '../modules/message/message.route';
 
 const Routes = express.Router();
 // Array of module routes
@@ -37,6 +38,10 @@ const moduleRouts = [
   {
     path: '/support',
     router: supportRoute,
+  },
+  {
+    path: '/message',
+    router: messageRoute,
   },
 ];
 
