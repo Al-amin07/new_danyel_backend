@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import config from '../../config';
 import ApppError from '../../error/AppError';
 import { IAddress, ILoad, IStatusTimeline } from './load.interface';

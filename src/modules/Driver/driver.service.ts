@@ -3,7 +3,7 @@ import fs, { stat } from 'fs';
 import path from 'path';
 import { Driver } from './driver.model';
 import { LoadModel } from '../load/load.model';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import ApppError from '../../error/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { IReview } from './driver.interface';
@@ -277,6 +277,24 @@ const updateDriverStatus = async (id: string, payload: { status: boolean }) => {
   return result;
 };
 
+const myLodd = async (id: Types.ObjectId) => {
+  const isDriverExist = await Driver.findOne({ user: id });
+  const result = await LoadModel.find({ assignedDriver: isDriverExist?.id });
+  const totalAmount = result.reduce((acc, el) => acc + el.totalPayment, 0);
+  const pendingAmount = result
+    .filter((el) => el.paymentStatus !== 'PAID')
+    .reduce((acc, item) => acc + item.totalPayment, 0);
+  const padiAmount = result
+    .filter((el) => el.paymentStatus === 'PAID')
+    .reduce((acc, item) => acc + item.totalPayment, 0);
+  return {
+    data: result,
+    totalAmount,
+    pendingAmount,
+    padiAmount,
+  };
+};
+
 export const driverService = {
   updateDriverProfileIntoDb,
   assignLoadToDriver,
@@ -284,4 +302,5 @@ export const driverService = {
   reviewDriver,
   getAllDriver,
   updateDriverStatus,
+  myLodd,
 };

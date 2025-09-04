@@ -56,4 +56,6 @@ driverRoute.patch(
   driverController.updateDriverStatus,
 );
 
+driverRoute.get('/myload', auth(userRole.driver), driverController.myLoad);
+
 export default driverRoute;

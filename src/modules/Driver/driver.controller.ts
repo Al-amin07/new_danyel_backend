@@ -3,6 +3,7 @@ import catchAsync from '../../util/catchAsync';
 import { driverService } from './driver.service';
 import { JwtPayload } from 'jsonwebtoken';
 import sendResponse from '../../util/sendResponse';
+import { StatusCodes } from 'http-status-codes';
 
 const updateDriverProfile = catchAsync(async (req: Request, res: Response) => {
   const id = (req.user as JwtPayload).id;
@@ -22,7 +23,7 @@ const updateDriverProfile = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: 'Driver profile updated successfully',
     data: result,
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
   });
 });
 const assignLoadToDriver = catchAsync(async (req: Request, res: Response) => {
@@ -34,7 +35,7 @@ const assignLoadToDriver = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: 'Load assigned to driver successfully',
     data: result,
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
   });
 });
 const updateLoadStatus = catchAsync(async (req: Request, res: Response) => {
@@ -45,7 +46,7 @@ const updateLoadStatus = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: 'Load assigned to driver successfully',
     data: result,
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
   });
 });
 const reviewDriver = catchAsync(async (req: Request, res: Response) => {
@@ -66,7 +67,7 @@ const getAllDriver = catchAsync(async (req: Request, res: Response) => {
     message: 'Drivers retrived successfully!!!',
     data: result.data,
     meta: result.meta,
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
   });
 });
 
@@ -82,6 +83,18 @@ const updateDriverStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const myLoad = catchAsync(async (req: Request, res: Response) => {
+  const id = (req.user as JwtPayload).id;
+
+  const result = await driverService.myLodd(id);
+  sendResponse(res, {
+    success: true,
+    message: 'Loads retrived successfully',
+    data: result,
+    statusCode: StatusCodes.OK,
+  });
+});
+
 export const driverController = {
   updateDriverProfile,
   assignLoadToDriver,
@@ -89,4 +102,5 @@ export const driverController = {
   reviewDriver,
   getAllDriver,
   updateDriverStatus,
+  myLoad,
 };
