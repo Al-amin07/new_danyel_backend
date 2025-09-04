@@ -9,12 +9,15 @@ import { Company } from '../Company/company.model';
 import { StatusCodes } from 'http-status-codes';
 import { getLoadNote } from './load.constant';
 
+import { notificationService } from '../notification/notification.service';
+import { INotification } from '../notification/notification.interface';
+
 const createLoadToDB = async (
   userId: string,
   payload: ILoad,
   files: Express.Multer.File[],
 ) => {
-  if (!mongoose.Types.ObjectId.isValid(payload?.companyId)) {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid Company ID');
   }
   const isLoadExist = await LoadModel.findOne({ loadId: payload?.loadId });
@@ -25,12 +28,18 @@ const createLoadToDB = async (
   if (!isCompanyExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found!!!');
   }
+  payload.companyId = isCompanyExist._id.toString();
 
   payload.totalPayment = payload.totalDistance * payload.ratePerMile;
 
   if (!files || files.length === 0) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'No files uploaded');
   }
+
+  const notification: INotification = {
+    type: 'task',
+    content: `New load assigned by : ${isCompanyExist?.companyName}`,
+  };
 
   const documents = files.map((file) => ({
     type: file?.mimetype,
@@ -44,8 +53,12 @@ const createLoadToDB = async (
       payload?.assignedDriver,
     ).populate('user');
     if (!isDriverExist) {
-      throw new ApppError(404, 'Driver not found');
+      throw new ApppError(StatusCodes.NOT_FOUND, 'Driver not found');
     }
+    notification.receiverId = new mongoose.Types.ObjectId(
+      isDriverExist?.user?._id,
+    );
+
     const statusTimeline: IStatusTimeline = {
       status: 'Assigned',
       timestamp: new Date(),
@@ -67,6 +80,8 @@ const createLoadToDB = async (
         { $addToSet: { loads: result[0]._id } },
         { new: true, session },
       );
+      notification.load = result[0].id;
+      await notificationService.sendNotification(notification);
     }
     await Company.findByIdAndUpdate(
       payload?.companyId,
@@ -130,7 +145,7 @@ const getSingleLoad = async (id: string) => {
     })
     .populate({
       path: 'companyId',
-      populate: { path: 'user', select: 'name email profileImage role' },
+      // populate: { path: 'user', select: 'name email profileImage role' },
     });
   if (!result) {
     throw new ApppError(404, 'Load not found');
@@ -189,7 +204,16 @@ const updateLoadToDB = async (
       $push: { documents },
     },
     { new: true },
-  );
+  ).populate({ path: 'assignedDriver', populate: { path: 'user' } });
+  if (isLoadExist?.assignedDriver) {
+    console.log({ isLoadExist });
+    await notificationService.sendNotification({
+      content: `Load ${isLoadExist?.loadId} has been updated by dispatcher, please check again`,
+      type: 'alert',
+      receiverId: (result?.assignedDriver as any)?.user?.id,
+      load: result?.id,
+    });
+  }
   return result;
 };
 
@@ -197,7 +221,10 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!mongoose.Types.ObjectId.isValid(loadId)) {
     throw new ApppError(400, 'Invalid load ID');
   }
-  const isLoadExist = await LoadModel.findById(loadId).lean();
+  const isLoadExist = await LoadModel.findById(loadId)
+    .populate('companyId')
+    .lean();
+  console.log({ isLoadExist });
   if (!isLoadExist) {
     throw new ApppError(404, 'Load not found');
   }
@@ -207,18 +234,18 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   }
   const isDriverExist = await Driver.findById(payload?.driverId)
     .lean()
-    .populate({ path: 'user', select: 'name email' });
+    .populate({ path: 'user', select: 'name email id' });
   if (!isDriverExist) {
     throw new ApppError(404, 'Driver not found');
   }
-  console.log({ isLoadExist, isDriverExist }, 'From Here');
-  if (
-    isDriverExist?.loads &&
-    isDriverExist.loads.length > 0 &&
-    isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
-  ) {
-    throw new ApppError(400, 'This load is already assigned to this driver');
-  }
+  // console.log({ isLoadExist, isDriverExist }, 'From Here');
+  // if (
+  //   isDriverExist?.loads &&
+  //   isDriverExist.loads.length > 0 &&
+  //   isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
+  // ) {
+  //   throw new ApppError(400, 'This load is already assigned to this driver');
+  // }
 
   const statusTimeline = {
     status: 'Assigned',
@@ -236,7 +263,10 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
         $push: { statusTimeline },
       },
       { new: true, session },
-    );
+    ).populate({
+      path: 'assignedDriver',
+      populate: { path: 'user', select: 'name email profileImage' },
+    });
     await Driver.findByIdAndUpdate(
       payload?.driverId,
       {
@@ -244,6 +274,11 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
       },
       { session },
     ).populate('companyId');
+    const sendNotification = await notificationService.sendNotification({
+      receiverId: new mongoose.Types.ObjectId(isDriverExist?.user?._id),
+      type: 'task',
+      content: `New load assigned by : ${(isLoadExist?.companyId as any)?.companyName}`,
+    });
     await session.commitTransaction();
     session.endSession();
     return result;

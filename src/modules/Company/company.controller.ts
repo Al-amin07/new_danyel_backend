@@ -14,6 +14,18 @@ const getAllCompany = catchAsync(async (req: Request, res: Response) => {
     statusCode: 200,
   });
 });
+const getAllLoadOfCompany = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user;
+  const query = req.query;
+  const result = await companyService.getAllCompanyLoad(id, query);
+  sendResponse(res, {
+    data: result.data,
+    meta: result.meta,
+    message: 'Loads retrived successfully',
+    success: true,
+    statusCode: 200,
+  });
+});
 const getSingleCompany = catchAsync(async (req: Request, res: Response) => {
   const { companyId } = req.params;
   const result = await companyService.getSingleCompany(companyId);
@@ -42,4 +54,5 @@ export const companyController = {
   getAllCompany,
   getSingleCompany,
   updateCompany,
+  getAllLoadOfCompany,
 };

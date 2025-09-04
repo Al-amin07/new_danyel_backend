@@ -7,6 +7,7 @@ import driverRoute from '../modules/Driver/driver.route';
 import { loadRoute } from '../modules/load/load.route';
 import { supportRoute } from '../modules/support/support.route';
 import { messageRoute } from '../modules/message/message.route';
+import { notificationRoute } from '../modules/notification/notification.route';
 
 const Routes = express.Router();
 // Array of module routes
@@ -42,6 +43,10 @@ const moduleRouts = [
   {
     path: '/message',
     router: messageRoute,
+  },
+  {
+    path: '/notification',
+    router: notificationRoute,
   },
 ];
 

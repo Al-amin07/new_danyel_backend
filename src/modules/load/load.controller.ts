@@ -4,7 +4,7 @@ import { loadService } from './load.service';
 
 const createLoad = catchAsync(async (req, res) => {
   const { id } = req.user;
-  console.log(req.files);
+  console.log(id);
   const result = await loadService.createLoadToDB(
     id,
     req.body,

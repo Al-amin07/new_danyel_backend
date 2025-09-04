@@ -33,9 +33,6 @@ export const reviewDriverSchema = z.object({
   body: z.object({
     review: z.string(),
     rating: z.number(),
-    companyId: z
-      .string()
-      .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),
     loadId: z
       .string()
       .regex(objectIdRegex, { message: 'Invalid MongoDB ObjectId' }),

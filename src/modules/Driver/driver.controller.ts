@@ -51,12 +51,14 @@ const updateLoadStatus = catchAsync(async (req: Request, res: Response) => {
 });
 const reviewDriver = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await driverService.reviewDriver(id, req.body);
+  console.log({ id, body: req.user });
+  const { username, id: userId } = req.user as JwtPayload;
+  const result = await driverService.reviewDriver(id, req.body, userId);
   sendResponse(res, {
     success: true,
     message: 'Review added successfully!!!',
     data: result,
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
   });
 });
 const getAllDriver = catchAsync(async (req: Request, res: Response) => {
@@ -86,7 +88,7 @@ const updateDriverStatus = catchAsync(async (req: Request, res: Response) => {
 const myLoad = catchAsync(async (req: Request, res: Response) => {
   const id = (req.user as JwtPayload).id;
 
-  const result = await driverService.myLodd(id);
+  const result = await driverService.myLoad(id);
   sendResponse(res, {
     success: true,
     message: 'Loads retrived successfully',

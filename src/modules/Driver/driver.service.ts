@@ -8,8 +8,10 @@ import ApppError from '../../error/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { IReview } from './driver.interface';
 import QueryBuilder from '../../builder/QueryBuilder';
-import { IStatusTimeline } from '../load/load.interface';
+import { ILoad, IStatusTimeline } from '../load/load.interface';
 import { getLoadNote } from '../load/load.constant';
+import { notificationService } from '../notification/notification.service';
+import { Company } from '../Company/company.model';
 const getAllDriver = async (query: Record<string, unknown>) => {
   const driverQuery = new QueryBuilder(
     Driver.find().populate({
@@ -168,7 +170,12 @@ const updateLoadStatus = async (
     throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid load ID');
   }
 
-  const isLoadExist = await LoadModel.findById(payload?.loadId).lean();
+  const isLoadExist = await LoadModel.findById(payload?.loadId)
+    .populate({
+      path: 'companyId',
+      populate: { path: 'user', select: 'name email profileImage role _id' },
+    })
+    .lean();
   if (!isLoadExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Load not found');
   }
@@ -179,7 +186,7 @@ const updateLoadStatus = async (
     );
   }
 
-  const isDriverExist = await Driver.findOne({ user: id });
+  const isDriverExist = await Driver.findOne({ user: id }).populate('user');
   if (!isDriverExist) {
     throw new ApppError(
       StatusCodes.NOT_FOUND,
@@ -222,20 +229,32 @@ const updateLoadStatus = async (
         new Date().getTime() + 12 * 60 * 60 * 1000,
       );
     }
+
     const result = await LoadModel.findByIdAndUpdate(
       payload?.loadId,
       { loadStatus: payload?.status, $push: { statusTimeline } },
       { new: true },
     );
+    const sendNotification = await notificationService.sendNotification({
+      content: `Driver ${(isDriverExist?.user as any)?.name} has updated load ${isLoadExist?.loadId} to: ${payload?.status}`,
+      type: 'message',
+      load: result?.id,
+      receiverId: (isLoadExist?.companyId as any)?.user?._id,
+    });
+    console.log({ sendNotification });
+
     return result;
   }
 };
 
-const reviewDriver = async (id: string, payload: IReview) => {
-  const isDriverExist = await Driver.findById(id);
+const reviewDriver = async (id: string, payload: IReview, userId: string) => {
+  const isDriverExist = await Driver.findById(id).populate('user');
   if (!isDriverExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Driver not found');
   }
+  const isCompanyExist = await Company.findOne({ user: userId }).populate(
+    'user',
+  );
 
   const isReviewExist = isDriverExist?.reviews?.find(
     (el) => el.loadId == payload.loadId,
@@ -246,6 +265,7 @@ const reviewDriver = async (id: string, payload: IReview) => {
       'You already reviewed this driver for this load',
     );
   }
+  payload.companyId = isCompanyExist?.id;
 
   const totalReviews = isDriverExist?.reviews?.reduce(
     (acc, el) => acc + el.rating,
@@ -255,7 +275,13 @@ const reviewDriver = async (id: string, payload: IReview) => {
     ((totalReviews as number) + payload.rating) /
     ((isDriverExist?.reviews?.length as number) + 1);
 
-  console.log({ payload, isDriverExist, averageRating });
+  const sendNotification = await notificationService.sendNotification({
+    content: `You got ${payload?.rating} rating form Dispatcher ${(isCompanyExist?.user as any)?.name}`,
+    type: 'message',
+    receiverId: (isDriverExist?.user as any)?._id,
+  });
+
+  console.log({ payload, isDriverExist, averageRating, sendNotification });
   const result = await Driver.findByIdAndUpdate(
     id,
     { $push: { reviews: payload }, $set: { averageRating } },
@@ -277,7 +303,7 @@ const updateDriverStatus = async (id: string, payload: { status: boolean }) => {
   return result;
 };
 
-const myLodd = async (id: Types.ObjectId) => {
+const myLoad = async (id: Types.ObjectId) => {
   const isDriverExist = await Driver.findOne({ user: id });
   const result = await LoadModel.find({ assignedDriver: isDriverExist?.id });
   const totalAmount = result.reduce((acc, el) => acc + el.totalPayment, 0);
@@ -308,5 +334,5 @@ export const driverService = {
   reviewDriver,
   getAllDriver,
   updateDriverStatus,
-  myLodd,
+  myLoad,
 };

@@ -22,8 +22,8 @@ const getAllMessage = async () => {
   return result;
 };
 const getInboxMessage = async (payload: {
-  senderId: Types.ObjectId;
-  receiverId: Types.ObjectId;
+  senderId: string;
+  receiverId: string;
 }) => {
   console.log({ payload });
 
@@ -47,22 +47,7 @@ const getInboxMessage = async (payload: {
       path: 'receiver',
       select: 'name email profileImage',
     })
-    .sort({ createdAt: 1 }); // 1 = oldest first, -1 = newest first
-
-  // const result = await Message.find({
-  //   sender: payload?.senderId,
-  //   receiver: payload?.receiver,
-  // })
-  //   .populate({
-  //     path: 'sender',
-  //     select: 'name email',
-  //   })
-  //   .populate({
-  //     path: 'receiver',
-  //     select: 'name email',
-  //   })
-  //   .sort({ createdAt: -1 })
-  //   .exec();
+    .sort({ createdAt: 1 });
   return messages;
 };
 

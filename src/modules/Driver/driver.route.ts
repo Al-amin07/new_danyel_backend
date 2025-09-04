@@ -47,6 +47,7 @@ driverRoute.patch(
 driverRoute.patch(
   '/:id/review',
   validator(driverValidationSchema.reviewDriverSchema),
+  auth(userRole.company),
   driverController.reviewDriver,
 );
 

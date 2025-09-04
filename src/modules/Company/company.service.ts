@@ -1,7 +1,10 @@
+import { StatusCodes } from 'http-status-codes';
 import QueryBuilder from '../../builder/QueryBuilder';
+import ApppError from '../../error/AppError';
 import { ICompany } from './company.interface';
 import { Company } from './company.model';
 import { companySarchableFields } from './conpany.constant';
+import { LoadModel } from '../load/load.model';
 
 const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
   const companyQuery = new QueryBuilder(Company.find(), query)
@@ -73,8 +76,51 @@ const updateCompany = async (companyId: string, payload: ICompany) => {
   return result;
 };
 
+const getAllCompanyLoad = async (
+  userId: string,
+  query: Record<string, unknown>,
+) => {
+  const isCompanyExist = await Company.findOne({ user: userId })
+    .populate('loads')
+    .select('-password');
+  console.log({ isCompanyExist });
+  if (!isCompanyExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found');
+  }
+
+  const loadQuery = new QueryBuilder(LoadModel.find(), query)
+    .search([
+      'loadId',
+      'loadType',
+      'loadStatus',
+      'pickupAddress.street',
+      'pickupAddress.city',
+      'pickupAddress.apartment',
+      'pickupAddress.country',
+      'deliveryAddress.street',
+      'deliveryAddress.city',
+      'deliveryAddress.apartment',
+      'deliveryAddress.country',
+    ])
+    .filter()
+    .sort()
+    .paginate();
+  const result = await loadQuery.modelQuery.populate({
+    path: 'assignedDriver',
+    select: 'name email phone',
+    populate: { path: 'user', select: 'name email profileImage role' },
+  });
+
+  const meta = await loadQuery.getMetaData();
+  return {
+    data: result,
+    meta,
+  };
+};
+
 export const companyService = {
   getAllCompanyFromDb,
   getSingleCompany,
   updateCompany,
+  getAllCompanyLoad,
 };

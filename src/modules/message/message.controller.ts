@@ -22,7 +22,9 @@ const getAllMessage = catchAsync(async (req, res) => {
   });
 });
 const getInboxMessage = catchAsync(async (req, res) => {
-  const result = await MessageService.getInboxMessage(req.body);
+  const senderId = req.params.senderId;
+  const receiverId = req.params.receiverId;
+  const result = await MessageService.getInboxMessage({ senderId, receiverId });
   sendResponse(res, {
     data: result,
     success: true,
