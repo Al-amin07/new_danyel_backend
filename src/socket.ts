@@ -26,7 +26,7 @@ export const initSocket = (server: HTTPServer) => {
 
     socket.on('send_message', async (data) => {
       const { senderId, receiverId, text } = data;
-
+      console.log({ senderId, receiverId, text });
       try {
         // 1️⃣ Save to database
         const message = await Message.create({

@@ -287,11 +287,17 @@ const myLodd = async (id: Types.ObjectId) => {
   const padiAmount = result
     .filter((el) => el.paymentStatus === 'PAID')
     .reduce((acc, item) => acc + item.totalPayment, 0);
+  const completedLoad = result.filter(
+    (el) => el.paymentStatus === 'PAID',
+  ).length;
+  const activeLoad = result.filter((el) => el.paymentStatus !== 'PAID').length;
   return {
     data: result,
     totalAmount,
     pendingAmount,
     padiAmount,
+    completedLoad,
+    activeLoad,
   };
 };
 

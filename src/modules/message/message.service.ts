@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { IMessage } from './message.interface';
 import { Message } from './message.model';
 
@@ -23,23 +23,47 @@ const getAllMessage = async () => {
 };
 const getInboxMessage = async (payload: {
   senderId: Types.ObjectId;
-  receiver: Types.ObjectId;
+  receiverId: Types.ObjectId;
 }) => {
-  const result = await Message.find({
-    sender: payload?.senderId,
-    receiver: payload?.receiver,
+  console.log({ payload });
+
+  const messages = await Message.find({
+    $or: [
+      {
+        sender: new mongoose.Types.ObjectId(payload?.senderId),
+        receiver: new mongoose.Types.ObjectId(payload?.receiverId),
+      },
+      {
+        sender: new mongoose.Types.ObjectId(payload?.receiverId),
+        receiver: new mongoose.Types.ObjectId(payload?.senderId),
+      },
+    ],
   })
     .populate({
       path: 'sender',
-      select: 'name email',
+      select: 'name email profileImage',
     })
     .populate({
       path: 'receiver',
-      select: 'name email',
+      select: 'name email profileImage',
     })
-    .sort({ createdAt: -1 })
-    .exec();
-  return result;
+    .sort({ createdAt: 1 }); // 1 = oldest first, -1 = newest first
+
+  // const result = await Message.find({
+  //   sender: payload?.senderId,
+  //   receiver: payload?.receiver,
+  // })
+  //   .populate({
+  //     path: 'sender',
+  //     select: 'name email',
+  //   })
+  //   .populate({
+  //     path: 'receiver',
+  //     select: 'name email',
+  //   })
+  //   .sort({ createdAt: -1 })
+  //   .exec();
+  return messages;
 };
 
 export const MessageService = {
