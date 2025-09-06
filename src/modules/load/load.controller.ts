@@ -83,6 +83,17 @@ const updateLoadStatus = catchAsync(async (req, res) => {
     message: 'Load status updated successfully',
   });
 });
+const changeDriver = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+  const { assignedDriver } = req.body;
+  const result = await loadService.changedDriver(loadId, assignedDriver);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: 200,
+    message: 'Load assignd successfully',
+  });
+});
 
 export const loadController = {
   createLoad,
@@ -92,4 +103,5 @@ export const loadController = {
   aassignDriverToLoad,
   generateLoadId,
   updateLoadStatus,
+  changeDriver,
 };

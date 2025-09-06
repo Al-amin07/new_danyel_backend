@@ -159,8 +159,18 @@ const updateLoadToDB = async (
   payload: Partial<ILoad>,
   files: Express.Multer.File[],
 ) => {
-  const { pickupAddress, deliveryAddress, customer, ...loadData } = payload;
-  const isLoadExist = (await LoadModel.findById(id)) as ILoad;
+  const {
+    pickupAddress,
+    deliveryAddress,
+    customer,
+
+    ...loadData
+  } = payload;
+
+  const isLoadExist = (await LoadModel.findById(id).populate({
+    path: 'assignedDriver',
+    populate: { path: 'user' },
+  })) as ILoad;
   if (!isLoadExist) {
     throw new ApppError(404, 'Load not found');
   }
@@ -215,6 +225,7 @@ const updateLoadToDB = async (
       load: result?.id,
     });
   }
+
   return result;
 };
 
@@ -350,6 +361,40 @@ const updateLoadStatus = async (loadId: string, payload: Partial<ILoad>) => {
   return result;
 };
 
+const changedDriver = async (loadId: string, driverId: string) => {
+  const isLoadExist = await LoadModel.findById(loadId).populate({
+    path: 'assignedDriver',
+  });
+  if (!isLoadExist) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Load not found');
+  }
+  const isDriverExist = await Driver.findById(driverId).populate('user');
+  console.log({ driverId, isDriverExist });
+  if (!isDriverExist) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Driver not found');
+  }
+  if (isLoadExist?.assignedDriver) {
+    await Driver.findByIdAndUpdate(isLoadExist?.assignedDriver?._id, {
+      $pull: { loads: loadId },
+    });
+  }
+
+  const updatedLoad = await LoadModel.findByIdAndUpdate(
+    loadId,
+    { $set: { assignedDriver: isDriverExist._id } },
+    { new: true },
+  ).populate({ path: 'assignedDriver', populate: { path: 'user' } });
+  await Driver.findByIdAndUpdate(driverId, {
+    $addToSet: { loads: loadId },
+  });
+  await notificationService.sendNotification({
+    content: `Load ${isLoadExist?.loadId} has been assigned to you`,
+    type: 'alert',
+    receiverId: (updatedLoad?.assignedDriver as any)?.user?.id,
+    load: updatedLoad?.id,
+  });
+};
+
 // Function to generate random load ID
 async function generateLoadId(): Promise<string> {
   const numbers = Math.floor(100 + Math.random() * 900); // 3 random digits
@@ -370,4 +415,5 @@ export const loadService = {
   assignDriver,
   generateLoadId,
   updateLoadStatus,
+  changedDriver,
 };

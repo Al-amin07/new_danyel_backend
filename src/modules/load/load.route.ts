@@ -41,6 +41,11 @@ route.patch(
   auth(userRole.admin, userRole.company, userRole.superAdmin),
   loadController.aassignDriverToLoad,
 );
+route.patch(
+  '/:loadId/change-driver',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
+  loadController.changeDriver,
+);
 
 route.patch(
   `/:loadId/update-load-status`,
