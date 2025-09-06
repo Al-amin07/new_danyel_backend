@@ -32,8 +32,9 @@ const getMyNotification = catchAsync(async (req, res) => {
   });
 });
 const markNotificationsAsRead = catchAsync(async (req, res) => {
-  const { loads } = req.body;
-  const result = await notificationService.markNotificationsAsRead(loads);
+  const { notifications } = req.body;
+  const result =
+    await notificationService.markNotificationsAsRead(notifications);
   sendResponse(res, {
     data: result,
     statusCode: StatusCodes.OK,

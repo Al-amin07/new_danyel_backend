@@ -42,11 +42,10 @@ const getMyNotification = async (id: string) => {
   return result;
 };
 
-const markNotificationsAsRead = async (loadIds: string[]) => {
-  console.log({ loadIds });
-  // const result = await Notification.findOne({ id: loadIds[0] });
+const markNotificationsAsRead = async (notifications: string[]) => {
+  console.log({ notifications });
   const result = await Notification.updateMany(
-    { _id: { $in: loadIds } },
+    { _id: { $in: notifications } },
     { $set: { isRead: true } },
   );
   return result;
