@@ -5,6 +5,7 @@ const route = Router();
 
 route.get('/', notificationController.getAllNotification);
 route.post('/', notificationController.sendNotification);
+route.patch('/mark-as-read', notificationController.markNotificationsAsRead);
 route.get('/:id', notificationController.getMyNotification);
 
 export const notificationRoute = route;

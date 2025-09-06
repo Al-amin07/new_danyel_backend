@@ -5,6 +5,7 @@ import { ICompany } from './company.interface';
 import { Company } from './company.model';
 import { companySarchableFields } from './conpany.constant';
 import { LoadModel } from '../load/load.model';
+import { ILoad } from '../load/load.interface';
 
 const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
   const companyQuery = new QueryBuilder(Company.find(), query)
@@ -118,9 +119,33 @@ const getAllCompanyLoad = async (
   };
 };
 
+const companyStat = async (id: string) => {
+  const isCompanyExist = await Company.findOne({ user: id })
+    .populate('user')
+    .populate('loads');
+  // console.log({ id, isCompanyExist: isCompanyExist?.loads });
+  const allLoads = await LoadModel.find({ companyId: isCompanyExist?.id });
+  const activeLoads = allLoads.filter(
+    (el) => el.loadStatus !== 'Delivered',
+  ).length;
+  const unassignedLoads = allLoads.filter((el) => !el.assignedDriver).length;
+
+  const totalAmount = allLoads.reduce((acc, el) => acc + el.totalPayment, 0);
+  const totalDriver = isCompanyExist?.drivers.length;
+  return {
+    totalLoads: allLoads.length,
+    activeLoads,
+    unassignedLoads,
+
+    totalAmount,
+    totalDriver,
+  };
+};
+
 export const companyService = {
   getAllCompanyFromDb,
   getSingleCompany,
   updateCompany,
   getAllCompanyLoad,
+  companyStat,
 };

@@ -42,8 +42,19 @@ const getMyNotification = async (id: string) => {
   return result;
 };
 
+const markNotificationsAsRead = async (loadIds: string[]) => {
+  console.log({ loadIds });
+  // const result = await Notification.findOne({ id: loadIds[0] });
+  const result = await Notification.updateMany(
+    { _id: { $in: loadIds } },
+    { $set: { isRead: true } },
+  );
+  return result;
+};
+
 export const notificationService = {
   getAllNotification,
   getMyNotification,
   sendNotification,
+  markNotificationsAsRead,
 };

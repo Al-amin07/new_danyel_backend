@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../util/catchAsync';
 import { companyService } from './company.service';
 import sendResponse from '../../util/sendResponse';
+import { StatusCodes } from 'http-status-codes';
 
 const getAllCompany = catchAsync(async (req: Request, res: Response) => {
   const query = req.query;
@@ -49,10 +50,22 @@ const updateCompany = catchAsync(async (req: Request, res: Response) => {
     statusCode: 200,
   });
 });
+const companyState = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user;
+  const result = await companyService.companyStat(id);
+
+  sendResponse(res, {
+    data: result,
+    message: 'Company data retrived successfully',
+    success: true,
+    statusCode: StatusCodes.OK,
+  });
+});
 
 export const companyController = {
   getAllCompany,
   getSingleCompany,
   updateCompany,
   getAllLoadOfCompany,
+  companyState,
 };

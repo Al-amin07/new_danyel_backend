@@ -11,6 +11,11 @@ companyRoute.get(
   auth(userRole.company),
   companyController.getAllLoadOfCompany,
 );
+companyRoute.get(
+  '/mystat',
+  auth(userRole.company),
+  companyController.companyState,
+);
 companyRoute.get('/:companyId', companyController.getSingleCompany);
 companyRoute.patch('/:companyId', companyController.updateCompany);
 
