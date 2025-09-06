@@ -107,6 +107,7 @@ const getAllLoad = async (query: Record<string, unknown>) => {
       'loadId',
       'loadType',
       'loadStatus',
+      'paymentStatus',
       'pickupAddress.street',
       'pickupAddress.city',
       'pickupAddress.apartment',

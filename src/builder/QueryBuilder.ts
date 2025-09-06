@@ -19,7 +19,7 @@ class QueryBuilder<T> {
   }
   sort() {
     let sortBy = 'createdAt';
-    let sortOrder = 'asc';
+    let sortOrder = 'desc';
     if (this?.query?.sortBy) {
       sortBy = this?.query?.sortBy as string;
     }

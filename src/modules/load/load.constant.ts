@@ -1,5 +1,6 @@
 export const LoadStatusArray = [
   'Pending Assignment',
+  'Awaiting Pickup',
   'Assigned',
   'In Transit',
   'At Pickup',
@@ -7,7 +8,7 @@ export const LoadStatusArray = [
   'Delivered',
   'Cancelled',
 ] as const;
-export const LoadPaymentStatusArray = ['PENDING', 'PAID', 'REJECTED'] as const;
+export const LoadPaymentStatusArray = ['PENDING', 'PAID', 'UNPAID'] as const;
 
 export type TLoadStatus = (typeof LoadStatusArray)[number];
 export type TLoadPaymentStatus = (typeof LoadPaymentStatusArray)[number];

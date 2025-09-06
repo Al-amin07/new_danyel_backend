@@ -46,9 +46,9 @@ const createLoadSchema = z.object({
     ratePerMile: z.number(),
     totalPayment: z.number().optional(),
 
-    paymentStatus: z.enum(['PENDING', 'PAID', 'FAILED']).default('PENDING'),
+    paymentStatus: z.enum(['PENDING', 'PAID', 'UNPAID']).default('PENDING'),
     customerNotes: z.string().optional(),
-    paymentDate: z.date().optional(),
+    paymentDate: z.string().optional(),
 
     assignedDriver: z.string().optional(),
     customer: CustomerSchema,

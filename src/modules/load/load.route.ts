@@ -14,6 +14,7 @@ route.post(
   upload.array('documents', 10),
   (req, res, next) => {
     req.body = JSON.parse(req.body.data);
+    console.log('Hello there');
     next();
   },
   validator(loadValidationSchema.createLoadSchema),

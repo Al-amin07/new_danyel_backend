@@ -37,10 +37,13 @@ const customerSchema = new Schema<ICustomer>({
   phone: { type: String },
 });
 
-const DocumentSchema = new Schema<IDocument>({
-  type: { type: String, required: true },
-  url: { type: String, required: true },
-});
+const DocumentSchema = new Schema<IDocument>(
+  {
+    type: { type: String, required: true },
+    url: { type: String, required: true },
+  },
+  { timestamps: true },
+);
 
 const LeadSchema = new Schema<ILoad>(
   {

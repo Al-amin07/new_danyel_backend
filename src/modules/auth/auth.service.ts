@@ -27,6 +27,9 @@ const logIn = async (payload: { email: string; password: string }) => {
       'This user is blocked or deleted',
     );
   }
+  if (!user?.isVerified) {
+    throw new ApppError(StatusCodes.FORBIDDEN, 'This user is not verified');
+  }
   // Password check for email login
   const isPasswordmatch = await bcrypt.compare(password, user.password);
   console.log({ user, isPasswordmatch });

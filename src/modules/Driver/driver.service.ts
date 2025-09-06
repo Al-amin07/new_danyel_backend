@@ -308,10 +308,12 @@ const myLoad = async (id: Types.ObjectId) => {
   const result = await LoadModel.find({ assignedDriver: isDriverExist?.id });
   const totalAmount = result.reduce((acc, el) => acc + el.totalPayment, 0);
   const pendingAmount = result
-    .filter((el) => el.paymentStatus !== 'PAID')
+    .filter((el) => el.loadStatus !== 'Delivered')
     .reduce((acc, item) => acc + item.totalPayment, 0);
-  const padiAmount = result
-    .filter((el) => el.paymentStatus === 'PAID')
+  const paidAmount = result
+    .filter(
+      (el) => el.paymentStatus === 'PAID' && el.loadStatus === 'Delivered',
+    )
     .reduce((acc, item) => acc + item.totalPayment, 0);
   const completedLoad = result.filter(
     (el) => el.paymentStatus === 'PAID',
@@ -321,7 +323,7 @@ const myLoad = async (id: Types.ObjectId) => {
     data: result,
     totalAmount,
     pendingAmount,
-    padiAmount,
+    paidAmount,
     completedLoad,
     activeLoad,
   };
