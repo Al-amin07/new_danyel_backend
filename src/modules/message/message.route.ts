@@ -5,6 +5,7 @@ import { userRole } from '../../constents';
 
 const route = Router();
 
+route.post('/', messageController.createMessage);
 route.get('/', messageController.getAllMessage);
 route.get(
   '/my-message',

@@ -1,21 +1,40 @@
 import mongoose, { Types } from 'mongoose';
 import { IMessage } from './message.interface';
 import { Message } from './message.model';
+import { getIO, onlineUsers } from '../../socket';
 
 const createMessage = async (payload: IMessage) => {
-  const result = await Message.create(payload);
-  return result;
+  const io = getIO();
+
+  let message = await Message.create(payload);
+  message = await message.populate({
+    path: 'sender receiver',
+    select: 'name email profileImage',
+  });
+  const receiverSocketId =
+    onlineUsers[(payload?.receiver as Types.ObjectId)?.toString()];
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit('receive_message', {
+      _id: message._id,
+      senderId: message.sender,
+      receiverId: message.receiver,
+      text: message.text,
+      createdAt: message.createdAt,
+    });
+  }
+  // const result = await Message.create(payload);
+  return message;
 };
 
 const getAllMessage = async () => {
   const result = await Message.find({})
     .populate({
       path: 'sender',
-      select: 'name email',
+      select: 'name email profileImage',
     })
     .populate({
       path: 'receiver',
-      select: 'name email',
+      select: 'name email profileImage',
     })
     .sort({ createdAt: -1 })
     .exec();
