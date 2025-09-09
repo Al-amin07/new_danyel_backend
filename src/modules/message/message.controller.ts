@@ -4,7 +4,8 @@ import sendResponse from '../../util/sendResponse';
 import { MessageService } from './message.service';
 
 const createMessage = catchAsync(async (req, res) => {
-  const result = await MessageService.createMessage(req.body);
+  const file = req.file;
+  const result = await MessageService.createMessage(req.body, file);
   sendResponse(res, {
     data: result,
     success: true,
@@ -42,10 +43,21 @@ const getInboxMessage = catchAsync(async (req, res) => {
     message: 'My Messages  retrived successfully',
   });
 });
+const markMessageAsRead = catchAsync(async (req, res) => {
+  const messageIds = req.body.messageIds;
+  const result = await MessageService.markMessageAsRead(messageIds);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Messages marked as read successfully',
+  });
+});
 
 export const messageController = {
   createMessage,
   getAllMessage,
   getInboxMessage,
   getUserAllConversion,
+  markMessageAsRead,
 };

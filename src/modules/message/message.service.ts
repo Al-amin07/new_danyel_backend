@@ -2,10 +2,16 @@ import mongoose, { Types } from 'mongoose';
 import { IMessage } from './message.interface';
 import { Message } from './message.model';
 import { getIO, onlineUsers } from '../../socket';
+import config from '../../config';
 
-const createMessage = async (payload: IMessage) => {
+const createMessage = async (
+  payload: IMessage,
+  file: Express.Multer.File | undefined,
+) => {
   const io = getIO();
-
+  if (file?.path) {
+    payload.document = `${config.server_url}/uploads/${file?.filename}`;
+  }
   let message = await Message.create(payload);
   message = await message.populate({
     path: 'sender receiver',
@@ -19,6 +25,8 @@ const createMessage = async (payload: IMessage) => {
       senderId: message.sender,
       receiverId: message.receiver,
       text: message.text,
+      document: message.document,
+      isRead: message.isRead,
       createdAt: message.createdAt,
     });
   }
@@ -114,9 +122,18 @@ const getUserConversations = async (userId: string) => {
   ]);
 };
 
+const markMessageAsRead = async (messageIds: string[]) => {
+  return await Message.updateMany(
+    { _id: { $in: messageIds } },
+    { isRead: true },
+    { new: true },
+  );
+};
+
 export const MessageService = {
   createMessage,
   getAllMessage,
   getInboxMessage,
   getUserConversations,
+  markMessageAsRead,
 };
