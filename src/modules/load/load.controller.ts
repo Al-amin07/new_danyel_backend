@@ -40,6 +40,7 @@ const getSingleLoad = catchAsync(async (req, res) => {
 });
 const updateLoad = catchAsync(async (req, res) => {
   const { loadId } = req.params;
+  console.log({ loadId });
   const result = await loadService.updateLoadToDB(
     loadId,
     req.body,

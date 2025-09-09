@@ -57,6 +57,6 @@ export interface ILoad {
   assignedDriver?: Types.ObjectId;
   statusTimeline: IStatusTimeline[];
   customer: ICustomer;
-
+  rating?: number;
   documents: IDocument[];
 }

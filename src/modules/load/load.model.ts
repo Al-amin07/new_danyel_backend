@@ -83,6 +83,7 @@ const LeadSchema = new Schema<ILoad>(
     assignedDriver: { type: Schema.Types.ObjectId, ref: 'Driver' },
     customer: { type: customerSchema, required: true },
     documents: [DocumentSchema],
+    rating: { type: Number },
   },
   { timestamps: true },
 );

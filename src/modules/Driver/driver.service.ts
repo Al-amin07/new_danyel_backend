@@ -12,6 +12,7 @@ import { ILoad, IStatusTimeline } from '../load/load.interface';
 import { getLoadNote } from '../load/load.constant';
 import { notificationService } from '../notification/notification.service';
 import { Company } from '../Company/company.model';
+import { User } from '../user/user.model';
 const getAllDriver = async (query: Record<string, unknown>) => {
   const driverQuery = new QueryBuilder(
     Driver.find().populate({
@@ -81,6 +82,7 @@ const updateDriverProfileIntoDb = async (
       updateData[`location.${key}`] = location[key];
     });
   }
+  // await User.findByIdAndUpdate(id, {is})
   const result = await Driver.findOneAndUpdate({ user: id }, updateData, {
     new: true,
   });
@@ -285,6 +287,11 @@ const reviewDriver = async (id: string, payload: IReview, userId: string) => {
   const result = await Driver.findByIdAndUpdate(
     id,
     { $push: { reviews: payload }, $set: { averageRating } },
+    { new: true },
+  );
+  const updatedLoad = await LoadModel.findByIdAndUpdate(
+    payload?.loadId,
+    { $set: { rating: payload?.rating } },
     { new: true },
   );
   return result;

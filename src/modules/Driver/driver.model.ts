@@ -62,6 +62,7 @@ const DriverSchema = new Schema<IDriver>(
     reviews: [ReviewSchema],
     averageRating: { type: Number, default: 0 },
     status: { type: Boolean, default: true },
+    driverId: { type: String, required: true },
   },
   {
     timestamps: true,

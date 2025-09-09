@@ -104,6 +104,7 @@ export interface IDriver extends Document {
   reviews?: IReview[];
   averageRating?: number;
   status: boolean;
+  driverId: string;
 }
 
 export interface IFileType {

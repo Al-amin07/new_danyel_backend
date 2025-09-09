@@ -200,6 +200,7 @@ const updateLoadToDB = async (
       return {
         type: file?.mimetype,
         url: `${config.server_url}/uploads/${file?.filename}`,
+        createdAt: new Date(),
       };
     });
   }

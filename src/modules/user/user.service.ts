@@ -136,6 +136,7 @@ const createDriverToDB = async (
   if (isUserExist) {
     throw new ApppError(StatusCodes.CONFLICT, 'This user already exist!');
   }
+  const driverId = generateDriverId();
 
   const otp = generateOtp();
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -159,6 +160,7 @@ const createDriverToDB = async (
     const driverInfo = {
       user: result[0]?.id,
       ...restDriverData,
+      driverId,
     };
 
     await Driver.create([driverInfo], { session });
@@ -255,6 +257,15 @@ const userServices = {
 };
 
 export default userServices;
+
+function generateDriverId(length = 8) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 // const createCompanyToDB = async (
 //   payload: TCompanyUser,

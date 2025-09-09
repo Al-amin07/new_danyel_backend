@@ -51,8 +51,53 @@ const getInboxMessage = async (payload: {
   return messages;
 };
 
+const getUserConversations = async (userId: string) => {
+  return await Message.aggregate([
+    {
+      $match: {
+        $or: [
+          { sender: new mongoose.Types.ObjectId(userId) },
+          { receiver: new mongoose.Types.ObjectId(userId) },
+        ],
+      },
+    },
+    { $sort: { createdAt: -1 } }, // sort all messages by newest first
+    {
+      $group: {
+        _id: {
+          $cond: [
+            { $eq: ['$sender', new mongoose.Types.ObjectId(userId)] },
+            '$receiver',
+            '$sender',
+          ],
+        },
+        lastMessage: { $first: '$$ROOT' }, // keep the latest only
+      },
+    },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+    {
+      $project: {
+        user: { _id: 1, name: 1, email: 1 },
+        text: '$lastMessage.text',
+        isRead: '$lastMessage.isRead',
+        createdAt: '$lastMessage.createdAt',
+      },
+    },
+    { $sort: { createdAt: -1 } },
+  ]);
+};
+
 export const MessageService = {
   createMessage,
   getAllMessage,
   getInboxMessage,
+  getUserConversations,
 };

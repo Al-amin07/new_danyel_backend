@@ -30,7 +30,10 @@ route.patch(
   auth(userRole.admin, userRole.company, userRole.superAdmin),
   upload.array('documents', 10),
   (req, res, next) => {
-    req.body = JSON.parse(req.body.data);
+    if (req?.body?.data) {
+      console.log('sefsegfgv');
+      req.body = JSON.parse(req.body.data);
+    }
     next();
   },
   loadController.updateLoad,

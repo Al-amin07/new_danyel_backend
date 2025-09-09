@@ -21,6 +21,16 @@ const getAllMessage = catchAsync(async (req, res) => {
     message: 'Messages  retrived successfully',
   });
 });
+const getUserAllConversion = catchAsync(async (req, res) => {
+  const { id } = req.user;
+  const result = await MessageService.getUserConversations(id);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'My Messages  retrived successfully',
+  });
+});
 const getInboxMessage = catchAsync(async (req, res) => {
   const senderId = req.params.senderId;
   const receiverId = req.params.receiverId;
@@ -29,7 +39,7 @@ const getInboxMessage = catchAsync(async (req, res) => {
     data: result,
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Messages  retrived successfully',
+    message: 'My Messages  retrived successfully',
   });
 });
 
@@ -37,4 +47,5 @@ export const messageController = {
   createMessage,
   getAllMessage,
   getInboxMessage,
+  getUserAllConversion,
 };
