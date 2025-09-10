@@ -76,7 +76,7 @@ const updateDriverProfileIntoDb = async (
       fs.renameSync(file.path, destPath);
       console.log(`File saved to ${destPath}`);
       if (file?.fieldname === 'profile') {
-        const profileImage = `${config.server_url}/uploads/${file?.filename}`;
+        const profileImage = `${config.server_url}/uploads/drivers/${fileName}`;
         const updateUser = await User.findByIdAndUpdate(
           id,
           { profileImage },
