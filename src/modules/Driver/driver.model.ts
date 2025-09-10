@@ -63,6 +63,14 @@ const DriverSchema = new Schema<IDriver>(
     averageRating: { type: Number, default: 0 },
     status: { type: Boolean, default: true },
     driverId: { type: String, required: true },
+    notificationPreferences: {
+      LOAD_ASSIGNMENT: { type: Boolean, default: true },
+      LOAD_STATUS_UPDATE: { type: Boolean, default: true },
+      LOAD_DELIVERY_REMINDER: { type: Boolean, default: true },
+      PAYMENT: { type: Boolean, default: true },
+      SYSTEM_ALERT: { type: Boolean, default: true },
+      COMMUNICATION: { type: Boolean, default: true },
+    },
   },
   {
     timestamps: true,

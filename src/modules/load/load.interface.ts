@@ -59,4 +59,5 @@ export interface ILoad {
   customer: ICustomer;
   rating?: number;
   documents: IDocument[];
+  createdAt?: Date;
 }

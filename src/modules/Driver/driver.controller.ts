@@ -97,6 +97,21 @@ const myLoad = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateProfileImage = catchAsync(async (req: Request, res: Response) => {
+  const id = (req.user as JwtPayload).id;
+
+  const result = await driverService.updatePhoto(
+    id,
+    req.file as Express.Multer.File,
+  );
+  sendResponse(res, {
+    success: true,
+    message: 'profile update  successfully',
+    data: result,
+    statusCode: StatusCodes.OK,
+  });
+});
+
 export const driverController = {
   updateDriverProfile,
   assignLoadToDriver,
@@ -105,4 +120,5 @@ export const driverController = {
   getAllDriver,
   updateDriverStatus,
   myLoad,
+  updateProfileImage,
 };

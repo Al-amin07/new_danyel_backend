@@ -105,6 +105,14 @@ export interface IDriver extends Document {
   averageRating?: number;
   status: boolean;
   driverId: string;
+  notificationPreferences: {
+    LOAD_ASSIGNMENT: boolean;
+    LOAD_STATUS_UPDATE: boolean;
+    LOAD_DELIVERY_REMINDER: boolean;
+    PAYMENT: boolean;
+    SYSTEM_ALERT: boolean;
+    COMMUNICATION: boolean;
+  };
 }
 
 export interface IFileType {

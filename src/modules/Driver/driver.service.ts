@@ -13,6 +13,7 @@ import { getLoadNote } from '../load/load.constant';
 import { notificationService } from '../notification/notification.service';
 import { Company } from '../Company/company.model';
 import { User } from '../user/user.model';
+import { endOfWeek, startOfWeek } from 'date-fns';
 const getAllDriver = async (query: Record<string, unknown>) => {
   const driverQuery = new QueryBuilder(
     Driver.find().populate({
@@ -326,6 +327,23 @@ const myLoad = async (id: Types.ObjectId) => {
     (el) => el.paymentStatus === 'PAID',
   ).length;
   const activeLoad = result.filter((el) => el.paymentStatus !== 'PAID').length;
+  // Weekly stats
+  const start = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
+  const end = endOfWeek(new Date(), { weekStartsOn: 1 });
+
+  const weeklyLoads = result.filter(
+    (el) => (el.createdAt as Date) >= start && (el.createdAt as Date) <= end,
+  );
+
+  const weeklyEarnings = weeklyLoads.reduce(
+    (acc, el) => acc + (el.totalPayment || 0),
+    0,
+  );
+
+  const weeklyDistance = weeklyLoads.reduce(
+    (acc, el) => acc + (el.totalDistance || 0),
+    0,
+  );
   return {
     data: result,
     totalAmount,
@@ -333,7 +351,22 @@ const myLoad = async (id: Types.ObjectId) => {
     paidAmount,
     completedLoad,
     activeLoad,
+    weekly: {
+      loads: weeklyLoads.length,
+      earnings: weeklyEarnings,
+      distance: weeklyDistance,
+    },
   };
+};
+const updatePhoto = async (id: string, file: Express.Multer.File) => {
+  let profileImage = '';
+  console.log({ file });
+  if (!file?.path) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Please upload a photo');
+  }
+  profileImage = `${config.server_url}/uploads/${file?.filename}`;
+  const result = await User.findByIdAndUpdate(id, { profileImage });
+  return result;
 };
 
 export const driverService = {
@@ -344,4 +377,5 @@ export const driverService = {
   getAllDriver,
   updateDriverStatus,
   myLoad,
+  updatePhoto,
 };

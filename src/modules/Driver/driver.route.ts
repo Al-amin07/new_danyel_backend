@@ -39,6 +39,13 @@ driverRoute.patch(
   driverController.assignLoadToDriver,
 );
 driverRoute.patch(
+  '/update-profile-image',
+  upload.single('profile'),
+  auth(userRole.driver, userRole.company),
+
+  driverController.updateProfileImage,
+);
+driverRoute.patch(
   '/update-load-status',
   validator(driverValidationSchema.loadStatusValidationSchema),
   auth(userRole.driver),
@@ -54,6 +61,7 @@ driverRoute.patch(
 driverRoute.patch(
   '/update-driver-status',
   auth(userRole.driver),
+
   driverController.updateDriverStatus,
 );
 
