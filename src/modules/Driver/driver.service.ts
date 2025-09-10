@@ -51,7 +51,8 @@ const updateDriverProfileIntoDb = async (
   file: Express.Multer.File,
 ) => {
   const folder = 'uploads/drivers';
-  const { location, loads, ...restDriverData } = payload;
+  const { location, loads, name, ...restDriverData } = payload;
+
   if (!fs.existsSync(folder)) {
     fs.mkdirSync(folder, { recursive: true });
   }
@@ -107,6 +108,9 @@ const updateDriverProfileIntoDb = async (
     (Object.keys(location) as (keyof {})[]).forEach((key) => {
       updateData[`location.${key}`] = location[key];
     });
+  }
+  if (name) {
+    await User.findByIdAndUpdate(id, { name }, { new: true });
   }
   // await User.findByIdAndUpdate(id, {is})
   const result = await Driver.findOneAndUpdate({ user: id }, updateData, {
