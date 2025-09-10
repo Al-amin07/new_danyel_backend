@@ -18,6 +18,7 @@ const updateDriverProfile = catchAsync(async (req: Request, res: Response) => {
     data,
 
     files,
+    file as Express.Multer.File,
   );
   sendResponse(res, {
     success: true,

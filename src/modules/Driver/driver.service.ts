@@ -47,22 +47,26 @@ const updateDriverProfileIntoDb = async (
   payload: any,
 
   files: { [fieldname: string]: Express.Multer.File[] } | undefined,
+  file: Express.Multer.File,
 ) => {
-  const folder = 'uploads/drivers'; // local folder for drivers
+  const folder = 'uploads/drivers';
   const { location, loads, ...restDriverData } = payload;
   if (!fs.existsSync(folder)) {
     fs.mkdirSync(folder, { recursive: true });
   }
+
   const updateData: any = { ...restDriverData };
 
   const fileFields: Record<string, string> = {
     nidOrPassport: 'nidOrPassport',
     drivingLicense: 'drivingLicense',
     vehicleRegistration: 'vehicleRegistration',
+    profile: 'profile',
   };
   for (const [key, field] of Object.entries(fileFields)) {
     if (files?.[key]?.[0]) {
       const file = files[key][0];
+      // console.log({ file });
 
       // Move file to /uploads/drivers with unique name
       const fileName = `${Date.now()}-${file.originalname}`;
@@ -70,6 +74,16 @@ const updateDriverProfileIntoDb = async (
 
       fs.renameSync(file.path, destPath);
       console.log(`File saved to ${destPath}`);
+      if (file?.fieldname === 'profile') {
+        const profileImage = `${config.server_url}/uploads/${file?.filename}`;
+        const updateUser = await User.findByIdAndUpdate(
+          id,
+          { profileImage },
+          { new: true },
+        );
+        console.log({ updateUser });
+        continue;
+      }
       // Save relative URL for DB
       updateData[field] = {
         type: file.mimetype,
@@ -77,7 +91,17 @@ const updateDriverProfileIntoDb = async (
       };
     }
   }
+  if (file) {
+    const profileImage = `${config.server_url}/uploads/${file?.filename}`;
+    const updateUser = await User.findByIdAndUpdate(
+      id,
+      { profileImage },
+      { new: true },
+    );
+    console.log({ updateUser });
+  }
 
+  // console.log({ updateData });
   if (location) {
     (Object.keys(location) as (keyof {})[]).forEach((key) => {
       updateData[`location.${key}`] = location[key];
@@ -86,7 +110,7 @@ const updateDriverProfileIntoDb = async (
   // await User.findByIdAndUpdate(id, {is})
   const result = await Driver.findOneAndUpdate({ user: id }, updateData, {
     new: true,
-  });
+  }).populate('user');
   return result;
 };
 

@@ -21,7 +21,9 @@ driverRoute.patch(
     { name: 'nidOrPassport', maxCount: 1 },
     { name: 'drivingLicense', maxCount: 1 },
     { name: 'vehicleRegistration', maxCount: 1 },
+    { name: 'profile', maxCount: 1 },
   ]),
+  // upload.single('profile'),
   (req, res, next) => {
     if (req?.body?.data) {
       req.body = JSON.parse(req.body?.data || {});
