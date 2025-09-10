@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose';
-import { INotification } from './notification.interface';
+import { ENotificationType, INotification } from './notification.interface';
 
 const notificationSchema = new Schema<INotification>(
   {
@@ -7,8 +7,8 @@ const notificationSchema = new Schema<INotification>(
     senderId: { type: Schema.Types.ObjectId, ref: 'User' },
     type: {
       type: String,
-      enum: ['message', 'task', 'alert', 'system'],
-      default: 'message',
+      enum: Object.values(ENotificationType),
+      required: true,
     },
     content: { type: String, required: true },
     isRead: { type: Boolean, default: false },

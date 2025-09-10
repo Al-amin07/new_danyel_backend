@@ -10,7 +10,10 @@ import { StatusCodes } from 'http-status-codes';
 import { getLoadNote } from './load.constant';
 
 import { notificationService } from '../notification/notification.service';
-import { INotification } from '../notification/notification.interface';
+import {
+  ENotificationType,
+  INotification,
+} from '../notification/notification.interface';
 
 const createLoadToDB = async (
   userId: string,
@@ -37,7 +40,7 @@ const createLoadToDB = async (
   }
 
   const notification: INotification = {
-    type: 'task',
+    type: ENotificationType.LOAD_ASSIGNMENT,
     content: `New load assigned by : ${isCompanyExist?.companyName}`,
   };
 
@@ -221,7 +224,7 @@ const updateLoadToDB = async (
     console.log({ isLoadExist });
     await notificationService.sendNotification({
       content: `Load ${isLoadExist?.loadId} has been updated by dispatcher, please check again`,
-      type: 'alert',
+      type: ENotificationType.LOAD_STATUS_UPDATE,
       receiverId: (result?.assignedDriver as any)?.user?.id,
       load: result?.id,
     });
@@ -289,7 +292,7 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
     ).populate('companyId');
     const sendNotification = await notificationService.sendNotification({
       receiverId: new mongoose.Types.ObjectId(isDriverExist?.user?._id),
-      type: 'task',
+      type: ENotificationType.LOAD_ASSIGNMENT,
       content: `New load assigned by : ${(isLoadExist?.companyId as any)?.companyName}`,
     });
     await session.commitTransaction();
@@ -390,7 +393,7 @@ const changedDriver = async (loadId: string, driverId: string) => {
   });
   await notificationService.sendNotification({
     content: `Load ${isLoadExist?.loadId} has been assigned to you`,
-    type: 'alert',
+    type: ENotificationType.LOAD_ASSIGNMENT,
     receiverId: (updatedLoad?.assignedDriver as any)?.user?.id,
     load: updatedLoad?.id,
   });

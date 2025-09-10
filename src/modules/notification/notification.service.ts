@@ -1,22 +1,34 @@
 import { userRole } from '../../constents';
+import ApppError from '../../error/AppError';
 import { getIO, onlineUsers } from '../../socket';
+import { Driver } from '../Driver/driver.model';
 import { User } from '../user/user.model';
-import { INotification } from './notification.interface';
+import { ENotificationType, INotification } from './notification.interface';
 import { Notification } from './notification.model';
 
 const sendNotification = async (notification: INotification) => {
   const result = await Notification.create(notification);
   const isUserExist = await User.findById(notification?.receiverId);
   if (isUserExist?.role === userRole.driver) {
-  }
-  const io = getIO();
-  //   const receiverSocketId = onlineUsers[String('68b659c9778a2b206a349ed3')];
+    const isDriverExist = await Driver.findOne({ user: isUserExist?.id });
+    if (
+      isDriverExist &&
+      isDriverExist.notificationPreferences &&
+      isDriverExist.notificationPreferences[
+        notification.type as keyof typeof isDriverExist.notificationPreferences
+      ] === true
+    ) {
+      const io = getIO();
+      //   const receiverSocketId = onlineUsers[String('68b659c9778a2b206a349ed3')];
 
-  const receiverSocketId = onlineUsers[String(notification?.receiverId)];
-  //   console.log({ receiverSocketId, form: notification, onlineUsers });
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit('receive_notification', notification);
+      const receiverSocketId = onlineUsers[String(notification?.receiverId)];
+      //   console.log({ receiverSocketId, form: notification, onlineUsers });
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit('receive_notification', notification);
+      }
+    }
   }
+
   return result;
 };
 
@@ -57,9 +69,34 @@ const markNotificationsAsRead = async (notifications: string[]) => {
   return result;
 };
 
+const changeNotificationPreferences = async (
+  userId: string,
+  notifications: any,
+) => {
+  const isUserExist = await User.findById(userId);
+  if (isUserExist?.role === userRole.driver) {
+    const isDriverExist = await Driver.findOne({ user: isUserExist?.id });
+    if (!isDriverExist) {
+      throw new ApppError(404, 'Driver not found');
+    }
+    const result = await Driver.findByIdAndUpdate(
+      isDriverExist?.id,
+      {
+        notificationPreferences: {
+          ...isDriverExist.notificationPreferences,
+          ...notifications,
+        },
+      },
+      { new: true },
+    );
+    return result;
+  }
+};
+
 export const notificationService = {
   getAllNotification,
   getMyNotification,
   sendNotification,
   markNotificationsAsRead,
+  changeNotificationPreferences,
 };

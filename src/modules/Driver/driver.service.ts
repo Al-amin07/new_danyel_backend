@@ -1,5 +1,5 @@
 import config from '../../config';
-import fs, { stat } from 'fs';
+import fs from 'fs';
 import path from 'path';
 import { Driver } from './driver.model';
 import { LoadModel } from '../load/load.model';
@@ -14,6 +14,7 @@ import { notificationService } from '../notification/notification.service';
 import { Company } from '../Company/company.model';
 import { User } from '../user/user.model';
 import { endOfWeek, startOfWeek } from 'date-fns';
+import { ENotificationType } from '../notification/notification.interface';
 const getAllDriver = async (query: Record<string, unknown>) => {
   const driverQuery = new QueryBuilder(
     Driver.find().populate({
@@ -264,7 +265,7 @@ const updateLoadStatus = async (
     );
     const sendNotification = await notificationService.sendNotification({
       content: `Driver ${(isDriverExist?.user as any)?.name} has updated load ${isLoadExist?.loadId} to: ${payload?.status}`,
-      type: 'message',
+      type: ENotificationType.LOAD_STATUS_UPDATE,
       load: result?.id,
       receiverId: (isLoadExist?.companyId as any)?.user?._id,
     });
@@ -304,7 +305,7 @@ const reviewDriver = async (id: string, payload: IReview, userId: string) => {
 
   const sendNotification = await notificationService.sendNotification({
     content: `You got ${payload?.rating} rating form Dispatcher ${(isCompanyExist?.user as any)?.name}`,
-    type: 'message',
+    type: ENotificationType.OTHER,
     receiverId: (isDriverExist?.user as any)?._id,
   });
 

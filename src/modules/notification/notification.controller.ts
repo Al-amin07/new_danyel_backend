@@ -42,10 +42,26 @@ const markNotificationsAsRead = catchAsync(async (req, res) => {
     message: 'Notifications updated successfully',
   });
 });
+const changeNotificationPreferences = catchAsync(async (req, res) => {
+  const { notifications } = req.body;
+  const id = req.user?.id;
+  console.log({ notifications, id });
+  const result = await notificationService.changeNotificationPreferences(
+    id,
+    notifications,
+  );
+  sendResponse(res, {
+    data: result,
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Notifications updated successfully',
+  });
+});
 
 export const notificationController = {
   getAllNotification,
   getMyNotification,
   sendNotification,
   markNotificationsAsRead,
+  changeNotificationPreferences,
 };
