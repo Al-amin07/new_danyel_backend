@@ -4,6 +4,7 @@ import {
   ICustomer,
   IDocument,
   ILoad,
+  IReview,
   IStatusTimeline,
 } from './load.interface';
 import { LoadPaymentStatusArray, LoadStatusArray } from './load.constant';
@@ -36,6 +37,13 @@ const customerSchema = new Schema<ICustomer>({
   email: { type: String },
   phone: { type: String },
 });
+const reviewSchema = new Schema<IReview>(
+  {
+    rating: { type: Number },
+    comment: { type: String },
+  },
+  { timestamps: true },
+);
 
 const DocumentSchema = new Schema<IDocument>(
   {
@@ -84,7 +92,7 @@ const LeadSchema = new Schema<ILoad>(
     assignedDriver: { type: Schema.Types.ObjectId, ref: 'Driver' },
     customer: { type: customerSchema, required: true },
     documents: [DocumentSchema],
-    rating: { type: Number },
+    review: { type: reviewSchema },
   },
   { timestamps: true },
 );

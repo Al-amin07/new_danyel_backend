@@ -5,7 +5,7 @@ const messageSchema = new Schema<IMessage>(
   {
     sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     receiver: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    text: { type: String, required: true },
+    text: { type: String },
     document: { type: String },
     isRead: { type: Boolean, default: false },
   },

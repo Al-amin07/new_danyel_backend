@@ -17,6 +17,11 @@ export interface IDocument {
   name: string;
 }
 
+export interface IReview {
+  rating: number;
+  comment: string;
+}
+
 export interface ICustomer {
   name: string;
   email: string;
@@ -58,7 +63,7 @@ export interface ILoad {
   assignedDriver?: Types.ObjectId;
   statusTimeline: IStatusTimeline[];
   customer: ICustomer;
-  rating?: number;
+  review?: IReview;
   documents: IDocument[];
   createdAt?: Date;
 }

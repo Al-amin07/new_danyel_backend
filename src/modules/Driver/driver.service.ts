@@ -343,7 +343,7 @@ const reviewDriver = async (id: string, payload: IReview, userId: string) => {
   );
   const updatedLoad = await LoadModel.findByIdAndUpdate(
     payload?.loadId,
-    { $set: { rating: payload?.rating } },
+    { $set: { review: { rating: payload?.rating, comment: payload?.review } } },
     { new: true },
   );
   return result;
