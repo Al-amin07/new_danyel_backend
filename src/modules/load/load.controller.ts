@@ -19,7 +19,8 @@ const createLoad = catchAsync(async (req, res) => {
 });
 const getAllLoad = catchAsync(async (req, res) => {
   const query = req.query;
-  const result = await loadService.getAllLoad(query);
+  const { id } = req.user;
+  const result = await loadService.getAllLoad(id, query);
   sendResponse(res, {
     data: result.result,
     meta: result.meta,

@@ -21,7 +21,7 @@ route.post(
   loadController.createLoad,
 );
 
-route.get('/', loadController.getAllLoad);
+route.get('/', auth(userRole.company), loadController.getAllLoad);
 
 route.get('/generate-loadId', loadController.generateLoadId);
 route.get('/:loadId', loadController.getSingleLoad);

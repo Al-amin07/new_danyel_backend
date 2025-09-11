@@ -46,6 +46,7 @@ const createLoadToDB = async (
 
   const documents = files.map((file) => ({
     type: file?.mimetype,
+    name: file?.originalname,
     url: `${config.server_url}/uploads/${file?.filename}`,
   }));
   if (payload?.assignedDriver) {
@@ -104,8 +105,12 @@ const createLoadToDB = async (
   }
 };
 
-const getAllLoad = async (query: Record<string, unknown>) => {
-  const loadQuery = new QueryBuilder(LoadModel.find(), query)
+const getAllLoad = async (id: string, query: Record<string, unknown>) => {
+  const isCompanyExist = await Company.findOne({ user: id });
+  const loadQuery = new QueryBuilder(
+    LoadModel.find({ companyId: isCompanyExist?._id }),
+    query,
+  )
     .search([
       'loadId',
       'loadType',

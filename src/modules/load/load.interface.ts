@@ -14,6 +14,7 @@ export interface IAddress {
 export interface IDocument {
   type: string;
   url: string;
+  name: string;
 }
 
 export interface ICustomer {

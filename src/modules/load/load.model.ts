@@ -41,6 +41,7 @@ const DocumentSchema = new Schema<IDocument>(
   {
     type: { type: String, required: true },
     url: { type: String, required: true },
+    name: { type: String, required: true },
   },
   { timestamps: true },
 );
