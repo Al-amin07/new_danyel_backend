@@ -112,7 +112,7 @@ const getUserConversations = async (userId: string) => {
     { $unwind: '$user' },
     {
       $project: {
-        user: { _id: 1, name: 1, email: 1 },
+        user: { _id: 1, name: 1, email: 1, profileImage: 1 },
         text: '$lastMessage.text',
         isRead: '$lastMessage.isRead',
         createdAt: '$lastMessage.createdAt',

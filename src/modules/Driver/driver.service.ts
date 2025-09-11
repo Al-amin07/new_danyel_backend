@@ -47,7 +47,7 @@ const getSingleDriver = async (id: string) => {
   const result = await Driver.findById(id)
     .populate({
       path: 'user',
-      select: 'name email profileImage role',
+      select: 'name email profileImage role phone',
     })
     .populate({
       path: 'loads',
