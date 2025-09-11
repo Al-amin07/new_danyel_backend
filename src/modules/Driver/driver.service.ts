@@ -25,6 +25,7 @@ const getAllDriver = async (query: Record<string, unknown>) => {
   )
     .search([
       'user.name',
+      'driverId',
       'user.email',
       'location.city',
       'location.street',
