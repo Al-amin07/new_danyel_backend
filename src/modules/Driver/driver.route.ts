@@ -13,6 +13,11 @@ driverRoute.get(
   auth(userRole.admin, userRole.company, userRole.superAdmin),
   driverController.getAllDriver,
 );
+driverRoute.get(
+  '/getdriver/:id',
+  auth(userRole.admin, userRole.company, userRole.superAdmin),
+  driverController.getSingleDriver,
+);
 
 driverRoute.patch(
   '/update-profile',

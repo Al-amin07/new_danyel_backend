@@ -43,6 +43,18 @@ const getAllDriver = async (query: Record<string, unknown>) => {
     meta,
   };
 };
+const getSingleDriver = async (id: string) => {
+  const result = await Driver.findById(id)
+    .populate({
+      path: 'user',
+      select: 'name email profileImage role',
+    })
+    .populate({
+      path: 'loads',
+      populate: { path: 'companyId' },
+    });
+  return result;
+};
 const updateDriverProfileIntoDb = async (
   id: string,
   payload: any,
@@ -109,9 +121,18 @@ const updateDriverProfileIntoDb = async (
       updateData[`location.${key}`] = location[key];
     });
   }
+  const userData = {
+    name: '',
+    isProfileUpdate: true,
+  };
   if (name) {
-    await User.findByIdAndUpdate(id, { name }, { new: true });
+    userData.name = name;
   }
+  const updatesUserData = await User.findByIdAndUpdate(
+    id,
+    { ...userData },
+    { new: true },
+  );
   // await User.findByIdAndUpdate(id, {is})
   const result = await Driver.findOneAndUpdate({ user: id }, updateData, {
     new: true,
@@ -407,4 +428,5 @@ export const driverService = {
   updateDriverStatus,
   myLoad,
   updatePhoto,
+  getSingleDriver,
 };
