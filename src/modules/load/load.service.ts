@@ -403,6 +403,47 @@ const changedDriver = async (loadId: string, driverId: string) => {
     load: updatedLoad?.id,
   });
 };
+const cancelLoadByDriver = async (loadId: string) => {
+  const isLoadExist = await LoadModel.findById(loadId).populate({
+    path: 'assignedDriver',
+    populate: { path: 'user' },
+  });
+
+  if (!isLoadExist) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Load not found');
+  }
+  const statusTimeline: IStatusTimeline = {
+    status: 'Cancelled',
+    timestamp: new Date(),
+    notes: getLoadNote('Cancelled'),
+  };
+  const updatedLoad = await LoadModel.findByIdAndUpdate(
+    loadId,
+    { $set: { loadStatus: 'Cancelled' }, $push: { statusTimeline } },
+    { new: true },
+  ).populate({ path: 'assignedDriver', populate: { path: 'user' } });
+  const updatedDriver = await Driver.findByIdAndUpdate(
+    isLoadExist?.assignedDriver?._id,
+    { $set: { currentLoad: null } },
+    { new: true },
+  );
+  console.log({ updatedDriver });
+  const isCompanyExist = await Company.findById(
+    isLoadExist?.companyId,
+  ).populate('user');
+
+  // console.log({ loadId, updatedLoad });
+  if (isLoadExist?.assignedDriver) {
+    console.log('fsfggf');
+    await notificationService.sendNotification({
+      content: `Load ${isLoadExist?.loadId} has been cancelled`,
+      type: ENotificationType.LOAD_STATUS_UPDATE,
+      receiverId: (isCompanyExist?.user as any)?.id,
+      load: updatedLoad?.id,
+    });
+  }
+  return updatedLoad;
+};
 
 // Function to generate random load ID
 async function generateLoadId(): Promise<string> {
@@ -425,4 +466,5 @@ export const loadService = {
   generateLoadId,
   updateLoadStatus,
   changedDriver,
+  cancelLoadByDriver,
 };

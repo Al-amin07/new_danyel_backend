@@ -35,6 +35,15 @@ class QueryBuilder<T> {
     const queryObj = { ...this?.query };
     const excludeFields = ['search', 'page', 'limit', 'sortBy', 'sortOrder'];
     excludeFields.forEach((el) => delete queryObj[el]);
+    if (this.query?.status === 'All') {
+      delete queryObj.status;
+    }
+    if (this.query?.vehicleType === 'All') {
+      delete queryObj.vehicleType;
+    }
+    if (this.query?.availability === 'All') {
+      delete queryObj.availability;
+    }
     if (Object.entries(queryObj).length) {
       this.modelQuery = this?.modelQuery.find(queryObj);
     }

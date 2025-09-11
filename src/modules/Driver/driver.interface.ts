@@ -113,6 +113,7 @@ export interface IDriver extends Document {
     SYSTEM_ALERT: boolean;
     COMMUNICATION: boolean;
   };
+  currentLoad?: Types.ObjectId;
 }
 
 export interface IFileType {

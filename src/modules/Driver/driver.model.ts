@@ -33,7 +33,7 @@ const DriverSchema = new Schema<IDriver>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     location: { type: LocationSchema, required: false },
     licenseNumber: { type: String },
-
+    currentLoad: { type: Schema.Types.ObjectId, ref: 'Load' },
     vehicleType: {
       type: String,
       enum: Object.values(EVehicleType),

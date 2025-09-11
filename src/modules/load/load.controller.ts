@@ -96,6 +96,17 @@ const changeDriver = catchAsync(async (req, res) => {
     message: 'Load assignd successfully',
   });
 });
+const cancelLoadByDriverDriver = catchAsync(async (req, res) => {
+  const { loadId } = req.params;
+
+  const result = await loadService.cancelLoadByDriver(loadId);
+  sendResponse(res, {
+    data: result,
+    success: true,
+    statusCode: 200,
+    message: 'Load cancelled successfully',
+  });
+});
 
 export const loadController = {
   createLoad,
@@ -106,4 +117,5 @@ export const loadController = {
   generateLoadId,
   updateLoadStatus,
   changeDriver,
+  cancelLoadByDriverDriver,
 };

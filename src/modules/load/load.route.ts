@@ -56,5 +56,11 @@ route.patch(
   auth(userRole.admin, userRole.company),
   loadController.updateLoadStatus,
 );
+route.patch(
+  `/:loadId/cancel-load`,
+
+  auth(userRole.admin, userRole.company, userRole.driver),
+  loadController.cancelLoadByDriverDriver,
+);
 
 export const loadRoute = route;

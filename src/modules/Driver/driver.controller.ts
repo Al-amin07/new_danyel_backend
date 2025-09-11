@@ -64,6 +64,7 @@ const reviewDriver = catchAsync(async (req: Request, res: Response) => {
 });
 const getAllDriver = catchAsync(async (req: Request, res: Response) => {
   const query = req.query;
+  console.log({ query });
   const result = await driverService.getAllDriver(query);
   sendResponse(res, {
     success: true,
