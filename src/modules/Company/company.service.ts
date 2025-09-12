@@ -6,9 +6,10 @@ import { Company } from './company.model';
 import { companySarchableFields } from './conpany.constant';
 import { LoadModel } from '../load/load.model';
 import { notificationService } from '../notification/notification.service';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { ENotificationType } from '../notification/notification.interface';
 import { ILoad } from '../load/load.interface';
+import { User } from '../user/user.model';
 
 const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
   const companyQuery = new QueryBuilder(Company.find(), query)
@@ -39,12 +40,13 @@ const getSingleCompany = async (id: string) => {
   return result;
 };
 
-const updateCompany = async (companyId: string, payload: ICompany) => {
+const updateCompany = async (userId: string, payload: ICompany) => {
   const {
     address,
     notificationPreferences,
     loads,
     drivers,
+    user,
     ...restCompanyInfo
   } = payload;
   const updatedCompany: Record<string, unknown> = { ...restCompanyInfo };
@@ -59,9 +61,17 @@ const updateCompany = async (companyId: string, payload: ICompany) => {
         notificationPreferences[key];
     });
   }
+  if (user) {
+    const updatedUserDetails = await User.findByIdAndUpdate(
+      userId,
+      { ...user },
+      { new: true },
+    );
+    console.log({ updatedUserDetails });
+  }
 
-  const result = await Company.findByIdAndUpdate(
-    companyId,
+  const result = await Company.findOneAndUpdate(
+    { user: userId },
     {
       $set: {
         ...updatedCompany,
@@ -144,6 +154,208 @@ const companyStat = async (id: string) => {
   };
 };
 
+const getCompanyEarning = async (id: string) => {
+  const now = new Date();
+  const isCompanyExist = await Company.findOne({ user: id });
+
+  if (!isCompanyExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found');
+  }
+  console.log({ isCompanyExist });
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 7);
+
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const sixMonthsAgo = new Date(now);
+  sixMonthsAgo.setMonth(now.getMonth() - 6);
+  const loads = await LoadModel.find({ companyId: isCompanyExist._id });
+  // console.log({ loads });
+  // const test = await LoadModel.aggregate([
+  //   {
+  //     $match: { companyId: isCompanyExist?.id },
+  //   },
+  //   { $limit: 5 },
+  // ]);
+
+  // return test;
+  // console.log(test);
+
+  const results = await LoadModel.aggregate([
+    {
+      $match: {
+        companyId: isCompanyExist?.id, // ✅ ensure ObjectId
+      },
+    },
+    {
+      $addFields: {
+        deliveryDateParsed: { $toDate: '$deliveryDate' }, // ✅ convert string -> Date
+      },
+    },
+    {
+      $facet: {
+        last7Days: [
+          { $match: { deliveryDateParsed: { $gte: sevenDaysAgo } } },
+          {
+            $group: {
+              _id: null,
+              totalEarnings: {
+                $sum: {
+                  $cond: [
+                    { $eq: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              pendingEarnings: {
+                $sum: {
+                  $cond: [
+                    { $ne: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              totalLoads: { $sum: 1 }, // ✅ count all loads
+            },
+          },
+          {
+            $addFields: {
+              avgEarnings: {
+                $cond: [
+                  { $eq: ['$totalLoads', 0] },
+                  0,
+                  { $divide: ['$totalEarnings', '$totalLoads'] },
+                ],
+              },
+            },
+          },
+        ],
+        last30Days: [
+          { $match: { deliveryDateParsed: { $gte: thirtyDaysAgo } } },
+          {
+            $group: {
+              _id: null,
+              totalEarnings: {
+                $sum: {
+                  $cond: [
+                    { $eq: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              pendingEarnings: {
+                $sum: {
+                  $cond: [
+                    { $ne: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              totalLoads: { $sum: 1 },
+            },
+          },
+          {
+            $addFields: {
+              avgEarnings: {
+                $cond: [
+                  { $eq: ['$totalLoads', 0] },
+                  0,
+                  { $divide: ['$totalEarnings', '$totalLoads'] },
+                ],
+              },
+            },
+          },
+        ],
+        thisMonth: [
+          { $match: { deliveryDateParsed: { $gte: startOfMonth } } },
+          {
+            $group: {
+              _id: null,
+              totalEarnings: {
+                $sum: {
+                  $cond: [
+                    { $eq: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              pendingEarnings: {
+                $sum: {
+                  $cond: [
+                    { $ne: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              totalLoads: { $sum: 1 },
+            },
+          },
+          {
+            $addFields: {
+              avgEarnings: {
+                $cond: [
+                  { $eq: ['$totalLoads', 0] },
+                  0,
+                  { $divide: ['$totalEarnings', '$totalLoads'] },
+                ],
+              },
+            },
+          },
+        ],
+        lastSixMonths: [
+          { $match: { deliveryDateParsed: { $gte: sixMonthsAgo } } },
+          {
+            $group: {
+              _id: null,
+              totalEarnings: {
+                $sum: {
+                  $cond: [
+                    { $eq: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              pendingEarnings: {
+                $sum: {
+                  $cond: [
+                    { $ne: ['$paymentStatus', 'PAID'] },
+                    '$totalPayment',
+                    0,
+                  ],
+                },
+              },
+              totalLoads: { $sum: 1 },
+            },
+          },
+          {
+            $addFields: {
+              avgEarnings: {
+                $cond: [
+                  { $eq: ['$totalLoads', 0] },
+                  0,
+                  { $divide: ['$totalEarnings', '$totalLoads'] },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return results[0];
+};
+
 const sendNotificationToSuggestedDrivers = async (
   companyId: string,
   payload: { driverUserIds: string[]; loadId: string },
@@ -175,4 +387,5 @@ export const companyService = {
   getAllCompanyLoad,
   companyStat,
   sendNotificationToSuggestedDrivers,
+  getCompanyEarning,
 };

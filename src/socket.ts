@@ -24,32 +24,6 @@ export const initSocket = (server: HTTPServer) => {
       console.log(`✅ User ${userId} registered`);
     });
 
-    // socket.on('send_message', async (data) => {
-    //   const { senderId, receiverId, text } = data;
-    //   console.log({ senderId, receiverId, text });
-    //   try {
-    //     const message = await Message.create({
-    //       sender: senderId,
-    //       receiver: receiverId,
-    //       text,
-    //     });
-    //     const receiverSocketId = onlineUsers[receiverId];
-    //     if (receiverSocketId) {
-    //       io.to(receiverSocketId).emit('receive_message', {
-    //         _id: message._id,
-    //         senderId,
-    //         receiverId,
-    //         text: message.text,
-    //         createdAt: message.createdAt,
-    //       });
-    //     }
-    //   } catch (err) {
-    //     console.error('❌ Error saving message:', err);
-    //     socket.emit('message_error', { error: 'Message could not be saved' });
-    //   }
-    // });
-
-    // Disconnect
     socket.on('disconnect', () => {
       console.log('❌ Disconnected:', socket.id);
       Object.keys(onlineUsers).forEach((userId) => {

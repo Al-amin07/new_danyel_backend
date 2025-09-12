@@ -10,7 +10,9 @@ route.post(
   '/',
   upload.single('doc'),
   (req, res, next) => {
-    req.body = JSON.parse(req.body.data);
+    if (req?.body?.data) {
+      req.body = JSON.parse(req.body.data);
+    }
     next();
   },
   messageController.createMessage,

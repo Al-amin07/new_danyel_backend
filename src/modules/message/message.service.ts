@@ -9,6 +9,7 @@ const createMessage = async (
   file: Express.Multer.File | undefined,
 ) => {
   const io = getIO();
+
   if (file?.path) {
     payload.document = `${config.server_url}/uploads/${file?.filename}`;
   }

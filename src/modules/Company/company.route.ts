@@ -16,8 +16,17 @@ companyRoute.get(
   auth(userRole.company),
   companyController.companyState,
 );
+companyRoute.get(
+  '/my-earn',
+  auth(userRole.company),
+  companyController.getCompanyEarning,
+);
 companyRoute.get('/:companyId', companyController.getSingleCompany);
-companyRoute.patch('/:companyId', companyController.updateCompany);
+companyRoute.patch(
+  '/',
+  auth(userRole.company),
+  companyController.updateCompany,
+);
 companyRoute.post(
   '/send-load-notification',
   auth(userRole.company),

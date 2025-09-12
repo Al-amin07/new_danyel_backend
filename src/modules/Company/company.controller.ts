@@ -39,9 +39,9 @@ const getSingleCompany = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const updateCompany = catchAsync(async (req: Request, res: Response) => {
-  const { companyId } = req.params;
+  const { id } = req.user;
   const payload = req.body;
-  const result = await companyService.updateCompany(companyId, payload);
+  const result = await companyService.updateCompany(id, payload);
 
   sendResponse(res, {
     data: result,
@@ -77,6 +77,17 @@ const sendNotificationToSuggestedDrivers = catchAsync(
     });
   },
 );
+const getCompanyEarning = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user;
+  const result = await companyService.getCompanyEarning(id);
+
+  sendResponse(res, {
+    data: result,
+    message: 'Company Earn retrived successfully successfully',
+    success: true,
+    statusCode: StatusCodes.OK,
+  });
+});
 
 export const companyController = {
   getAllCompany,
@@ -85,4 +96,5 @@ export const companyController = {
   getAllLoadOfCompany,
   companyState,
   sendNotificationToSuggestedDrivers,
+  getCompanyEarning,
 };
