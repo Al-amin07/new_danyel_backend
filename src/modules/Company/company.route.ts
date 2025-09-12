@@ -18,5 +18,10 @@ companyRoute.get(
 );
 companyRoute.get('/:companyId', companyController.getSingleCompany);
 companyRoute.patch('/:companyId', companyController.updateCompany);
+companyRoute.post(
+  '/send-load-notification',
+  auth(userRole.company),
+  companyController.sendNotificationToSuggestedDrivers,
+);
 
 export default companyRoute;

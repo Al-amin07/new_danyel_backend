@@ -186,6 +186,7 @@ const assignLoadToDriver = async (id: string, loadId: string) => {
     const result = await Driver.findOneAndUpdate(
       { user: id },
       {
+        $set: { currentLoad: loadId, availability: 'On Duty' },
         $push: { loads: loadId },
       },
       { new: true, session, upsert: true },
@@ -203,6 +204,7 @@ const assignLoadToDriver = async (id: string, loadId: string) => {
 
     const populatedResult = await Driver.findById(result._id)
       .populate('loads')
+      .populate('currentLoad')
       .session(session);
 
     await session.commitTransaction();

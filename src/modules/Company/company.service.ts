@@ -5,6 +5,9 @@ import { ICompany } from './company.interface';
 import { Company } from './company.model';
 import { companySarchableFields } from './conpany.constant';
 import { LoadModel } from '../load/load.model';
+import { notificationService } from '../notification/notification.service';
+import { Types } from 'mongoose';
+import { ENotificationType } from '../notification/notification.interface';
 import { ILoad } from '../load/load.interface';
 
 const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
@@ -108,7 +111,6 @@ const getAllCompanyLoad = async (
     .paginate();
   const result = await loadQuery.modelQuery.populate({
     path: 'assignedDriver',
-    select: 'name email phone',
     populate: { path: 'user', select: 'name email profileImage role' },
   });
 
@@ -142,10 +144,35 @@ const companyStat = async (id: string) => {
   };
 };
 
+const sendNotificationToSuggestedDrivers = async (
+  companyId: string,
+  payload: { driverUserIds: string[]; loadId: string },
+) => {
+  const isCompanyExist = await Company.findOne({ user: companyId });
+  if (!isCompanyExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found');
+  }
+  const isLoadExist = await LoadModel.findById(payload.loadId);
+  if (!isLoadExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Load not found');
+  }
+  console.log(payload.driverUserIds);
+  for (const driverId of payload.driverUserIds) {
+    await notificationService.sendNotification({
+      senderId: companyId as unknown as Types.ObjectId, // Company that sends the load
+      receiverId: driverId as unknown as Types.ObjectId, // Driver receiving notification
+      type: ENotificationType.LOAD_ASSIGNMENT, // Custom type
+      content: 'New load available. Do you want to accept it?',
+      load: isLoadExist as ILoad, // Store load reference for driver action
+    });
+  }
+};
+
 export const companyService = {
   getAllCompanyFromDb,
   getSingleCompany,
   updateCompany,
   getAllCompanyLoad,
   companyStat,
+  sendNotificationToSuggestedDrivers,
 };

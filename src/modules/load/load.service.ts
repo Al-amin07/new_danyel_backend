@@ -79,19 +79,28 @@ const createLoadToDB = async (
       session,
     });
     if (payload?.assignedDriver) {
-      await Driver.findByIdAndUpdate(
+      const updatedDriver = await Driver.findByIdAndUpdate(
         payload?.assignedDriver,
+        {
+          $set: { currentLoad: result[0]._id, availability: 'On Duty' },
+          $addToSet: { loads: result[0]._id },
+        },
+        { new: true, session },
+      );
+      notification.load = result[0];
+      await notificationService.sendNotification(notification);
+      await Company.findByIdAndUpdate(
+        payload?.companyId,
+        { $addToSet: { loads: result[0]._id, drivers: updatedDriver?._id } },
+        { new: true, session },
+      );
+    } else {
+      await Company.findByIdAndUpdate(
+        payload?.companyId,
         { $addToSet: { loads: result[0]._id } },
         { new: true, session },
       );
-      notification.load = result[0].id;
-      await notificationService.sendNotification(notification);
     }
-    await Company.findByIdAndUpdate(
-      payload?.companyId,
-      { $addToSet: { loads: result[0]._id } },
-      { new: true, session },
-    );
 
     await session.commitTransaction();
     session.endSession();
@@ -131,7 +140,7 @@ const getAllLoad = async (id: string, query: Record<string, unknown>) => {
   const result = await loadQuery.modelQuery
     .populate({
       path: 'assignedDriver',
-      select: 'name email phone',
+
       populate: { path: 'user', select: 'name email profileImage role' },
     })
     .populate({
@@ -149,7 +158,7 @@ const getSingleLoad = async (id: string) => {
   const result = await LoadModel.findById(id)
     .populate({
       path: 'assignedDriver',
-      select: 'name email phone',
+
       populate: { path: 'user', select: 'name email profileImage role' },
     })
     .populate({
@@ -259,14 +268,13 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!isDriverExist) {
     throw new ApppError(404, 'Driver not found');
   }
-  // console.log({ isLoadExist, isDriverExist }, 'From Here');
-  // if (
-  //   isDriverExist?.loads &&
-  //   isDriverExist.loads.length > 0 &&
-  //   isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
-  // ) {
-  //   throw new ApppError(400, 'This load is already assigned to this driver');
-  // }
+  if (
+    isDriverExist?.loads &&
+    isDriverExist.loads.length > 0 &&
+    isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
+  ) {
+    throw new ApppError(400, 'This load is already assigned to this driver');
+  }
 
   const statusTimeline = {
     status: 'Assigned',
@@ -291,6 +299,7 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
     await Driver.findByIdAndUpdate(
       payload?.driverId,
       {
+        $set: { currentLoad: loadId, availability: 'On Duty' },
         $addToSet: { loads: loadId },
       },
       { session },
@@ -384,16 +393,18 @@ const changedDriver = async (loadId: string, driverId: string) => {
   }
   if (isLoadExist?.assignedDriver) {
     await Driver.findByIdAndUpdate(isLoadExist?.assignedDriver?._id, {
+      $set: { currentLoad: null, availability: 'Available' },
       $pull: { loads: loadId },
     });
   }
 
   const updatedLoad = await LoadModel.findByIdAndUpdate(
     loadId,
-    { $set: { assignedDriver: isDriverExist._id } },
+    { $set: { assignedDriver: isDriverExist._id, loadStatus: 'Assigned' } },
     { new: true },
   ).populate({ path: 'assignedDriver', populate: { path: 'user' } });
   await Driver.findByIdAndUpdate(driverId, {
+    $set: { currentLoad: loadId, availability: 'On Duty' },
     $addToSet: { loads: loadId },
   });
   await notificationService.sendNotification({
@@ -424,7 +435,7 @@ const cancelLoadByDriver = async (loadId: string) => {
   ).populate({ path: 'assignedDriver', populate: { path: 'user' } });
   const updatedDriver = await Driver.findByIdAndUpdate(
     isLoadExist?.assignedDriver?._id,
-    { $set: { currentLoad: null } },
+    { $set: { currentLoad: null, availability: 'Available' } },
     { new: true },
   );
   console.log({ updatedDriver });

@@ -5,7 +5,7 @@ import sendResponse from '../../util/sendResponse';
 import authServices from './auth.service';
 
 const logIn = catchAsync(async (req, res) => {
-  const result = await authServices.logIn(req.body);
+  const result = await authServices.logIn(req, req.body);
   const { accessToken, refreshToken } = result;
   sendResponse(res, {
     statusCode: StatusCodes.OK,

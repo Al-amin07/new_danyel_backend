@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { ILoad } from '../load/load.interface';
 
 export enum ENotificationType {
   LOAD_ASSIGNMENT = 'LOAD_ASSIGNMENT',
@@ -18,5 +19,5 @@ export interface INotification {
   type: ENotificationType;
   content: string;
   isRead?: boolean;
-  load?: Types.ObjectId;
+  load?: Types.ObjectId | ILoad;
 }

@@ -12,8 +12,12 @@ import { generateOtp } from '../../util/generateOtp';
 import generateForgetPasswordEmail from '../../util/generateForgetPasswordEmail';
 import generateOTPEmail from '../../util/generateOtpEmail';
 import authUtil from './auth.utill';
+import { logLogin } from '../../middleware/logLogin';
 
-const logIn = async (payload: { email: string; password: string }) => {
+const logIn = async (
+  req: any,
+  payload: { email: string; password: string },
+) => {
   const { email, password } = payload;
   const user = await User.findOne({ email }).select('+password');
 
@@ -61,6 +65,7 @@ const logIn = async (payload: { email: string; password: string }) => {
     config.jwt_refresh_Token_secret,
     config.rifresh_expairsIn,
   );
+  await logLogin(true, user._id.toString(), req);
 
   return { accessToken, refreshToken, userData: updatedUser };
 };

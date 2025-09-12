@@ -61,6 +61,22 @@ const companyState = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
   });
 });
+const sendNotificationToSuggestedDrivers = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.user;
+    const result = await companyService.sendNotificationToSuggestedDrivers(
+      id,
+      req.body,
+    );
+
+    sendResponse(res, {
+      data: result,
+      message: 'Message send successfully',
+      success: true,
+      statusCode: StatusCodes.OK,
+    });
+  },
+);
 
 export const companyController = {
   getAllCompany,
@@ -68,4 +84,5 @@ export const companyController = {
   updateCompany,
   getAllLoadOfCompany,
   companyState,
+  sendNotificationToSuggestedDrivers,
 };
