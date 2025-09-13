@@ -86,6 +86,20 @@ const getSingleDriver = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
   });
 });
+const getSingleDriverByUserId = catchAsync(
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    console.log({ id });
+    const result = await driverService.getSingleDriverByUserId(id);
+    sendResponse(res, {
+      success: true,
+      message: 'Driversss retrived successfully!!!',
+      data: result,
+
+      statusCode: StatusCodes.OK,
+    });
+  },
+);
 
 const updateDriverStatus = catchAsync(async (req: Request, res: Response) => {
   const id = (req.user as JwtPayload).id;
@@ -136,4 +150,5 @@ export const driverController = {
   myLoad,
   updateProfileImage,
   getSingleDriver,
+  getSingleDriverByUserId,
 };

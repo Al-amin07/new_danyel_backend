@@ -14,6 +14,7 @@ import {
   ENotificationType,
   INotification,
 } from '../notification/notification.interface';
+import geocodeAddress from '../../util/generateGeoCode';
 
 const createLoadToDB = async (
   userId: string,
@@ -43,6 +44,16 @@ const createLoadToDB = async (
     type: ENotificationType.LOAD_ASSIGNMENT,
     content: `New load assigned by : ${isCompanyExist?.companyName}`,
   };
+
+  // const pickupStr = `${payload?.pickupAddress.street}, ${payload?.pickupAddress.city}, ${payload?.pickupAddress.state} ${payload?.pickupAddress.zipCode}, ${payload?.pickupAddress.country}`;
+  // const deliveryStr = `${payload?.deliveryAddress.street}, ${payload?.deliveryAddress.city}, ${payload?.deliveryAddress.state} ${payload?.deliveryAddress.zipCode}, ${payload?.deliveryAddress.country}`;
+
+  // const [p, d] = await Promise.all([
+  //   geocodeAddress(pickupStr),
+  //   geocodeAddress(deliveryStr),
+  // ]);
+
+  // return { p, d };
 
   const documents = files.map((file) => ({
     type: file?.mimetype,
@@ -159,7 +170,10 @@ const getSingleLoad = async (id: string) => {
     .populate({
       path: 'assignedDriver',
 
-      populate: { path: 'user', select: 'name email profileImage role _id' },
+      populate: {
+        path: 'user',
+        select: 'name email profileImage role _id phone',
+      },
     })
     .populate({
       path: 'companyId',
@@ -268,13 +282,13 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!isDriverExist) {
     throw new ApppError(404, 'Driver not found');
   }
-  if (
-    isDriverExist?.loads &&
-    isDriverExist.loads.length > 0 &&
-    isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
-  ) {
-    throw new ApppError(400, 'This load is already assigned to this driver');
-  }
+  // if (
+  //   isDriverExist?.loads &&
+  //   isDriverExist.loads.length > 0 &&
+  //   isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
+  // ) {
+  //   throw new ApppError(400, 'This load is already assigned to this driver');
+  // }
 
   const statusTimeline = {
     status: 'Assigned',
@@ -308,6 +322,7 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
       receiverId: new mongoose.Types.ObjectId(isDriverExist?.user?._id),
       type: ENotificationType.LOAD_ASSIGNMENT,
       content: `New load assigned by : ${(isLoadExist?.companyId as any)?.companyName}`,
+      load: isLoadExist,
     });
     await session.commitTransaction();
     session.endSession();

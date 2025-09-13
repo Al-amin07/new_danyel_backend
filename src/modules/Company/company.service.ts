@@ -87,6 +87,7 @@ const updateCompany = async (userId: string, payload: ICompany) => {
     .populate('loads')
     .populate('drivers')
     .select('-password');
+  console.log({ result });
   return result;
 };
 
@@ -143,14 +144,28 @@ const companyStat = async (id: string) => {
   const unassignedLoads = allLoads.filter((el) => !el.assignedDriver).length;
 
   const totalAmount = allLoads.reduce((acc, el) => acc + el.totalPayment, 0);
-  const totalDriver = isCompanyExist?.drivers.length;
+  const totalDriver = await LoadModel.aggregate([
+    { $match: { companyId: isCompanyExist?.id } },
+    { $match: { assignedDriver: { $exists: true, $ne: null } } },
+    { $group: { _id: '$assignedDriver' } }, // unique
+    {
+      $lookup: {
+        from: 'drivers', // collection name must be lowercase plural
+        localField: '_id',
+        foreignField: '_id',
+        as: 'driver',
+      },
+    },
+    { $unwind: '$driver' },
+  ]);
+
   return {
     totalLoads: allLoads.length,
     activeLoads,
     unassignedLoads,
 
     totalAmount,
-    totalDriver,
+    totalDriver: totalDriver.map((d) => d.driver)?.length,
   };
 };
 

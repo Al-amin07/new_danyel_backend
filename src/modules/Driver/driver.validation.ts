@@ -16,6 +16,7 @@ export const loadStatusValidationSchema = z.object({
       'At Pickup',
       'In Transit',
       'Delivered',
+      'Cancelled',
     ]),
   }),
 });

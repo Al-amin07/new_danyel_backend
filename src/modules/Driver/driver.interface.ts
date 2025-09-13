@@ -93,7 +93,7 @@ export interface IDriver extends Document {
   availability: EAvailability;
   workingHours: string;
   preferredDeliveryZones?: string[];
-
+  onTimeRate?: number;
   // Optional fields for profile updates
   nidOrPassport?: IFileType;
   drivingLicense?: IFileType;

@@ -51,6 +51,7 @@ const DriverSchema = new Schema<IDriver>(
       default: EAvailability.AVAILABLE,
       required: true,
     },
+    onTimeRate: { type: Number },
     workingHours: { type: String, required: true, default: '9am - 5pm' },
     preferredDeliveryZones: [{ type: String }],
     nidOrPassport: { type: FileSchema },

@@ -54,6 +54,22 @@ const getSingleDriver = async (id: string) => {
       path: 'loads',
       populate: { path: 'companyId' },
     });
+
+  return result;
+};
+const getSingleDriverByUserId = async (id: string) => {
+  console.log({ id });
+  const result = await Driver.findOne({ user: id })
+    .populate({
+      path: 'user',
+      select: 'name email profileImage role phone _id',
+    })
+    .populate({
+      path: 'loads',
+      populate: { path: 'companyId' },
+    })
+    .populate('currentLoad');
+
   return result;
 };
 const updateDriverProfileIntoDb = async (
@@ -291,13 +307,32 @@ const updateLoadStatus = async (
       { loadStatus: payload?.status, $push: { statusTimeline } },
       { new: true },
     );
-    const sendNotification = await notificationService.sendNotification({
-      content: `Driver ${(isDriverExist?.user as any)?.name} has updated load ${isLoadExist?.loadId} to: ${payload?.status}`,
-      type: ENotificationType.LOAD_STATUS_UPDATE,
-      load: result?.id,
-      receiverId: (isLoadExist?.companyId as any)?.user?._id,
-    });
-    console.log({ sendNotification });
+    if (payload?.status === 'Delivered') {
+      await updateDriverOnTimeRate(isDriverExist?._id as string);
+
+      await notificationService.sendNotification({
+        content: `Load ${isLoadExist?.loadId} has been successfully deliveried by ${(isDriverExist?.user as any)?.name}`,
+        type: ENotificationType.LOAD_STATUS_UPDATE,
+        load: result?.id,
+        receiverId: (isLoadExist?.companyId as any)?.user?._id,
+      });
+      // console.log({ sendNotification });
+    } else if (payload?.status === 'Cancelled') {
+      await notificationService.sendNotification({
+        content: `Load ${isLoadExist?.loadId} has been cancelled  by ${(isDriverExist?.user as any)?.name}`,
+        type: ENotificationType.LOAD_STATUS_UPDATE,
+        load: result?.id,
+        receiverId: (isLoadExist?.companyId as any)?.user?._id,
+      });
+    } else {
+      await notificationService.sendNotification({
+        content: `Driver ${(isDriverExist?.user as any)?.name} has updated load ${isLoadExist?.loadId} to: ${payload?.status}`,
+        type: ENotificationType.LOAD_STATUS_UPDATE,
+        load: result?.id,
+        receiverId: (isLoadExist?.companyId as any)?.user?._id,
+      });
+      // console.log({ sendNotification });
+    }
 
     return result;
   }
@@ -432,4 +467,63 @@ export const driverService = {
   myLoad,
   updatePhoto,
   getSingleDriver,
+  getSingleDriverByUserId,
+};
+
+export const updateDriverOnTimeRate = async (driverId: string) => {
+  if (!driverId) return;
+
+  const deliveredLoads = await LoadModel.aggregate([
+    { $match: { assignedDriver: driverId, loadStatus: 'Delivered' } },
+    {
+      $addFields: {
+        expectedDate: {
+          $ifNull: [
+            { $last: '$statusTimeline.expectedDeliveryDate' },
+            '$deliveryDate',
+          ],
+        },
+      },
+    },
+    {
+      $project: {
+        onTime: {
+          $cond: [{ $lte: ['$deliveryDate', '$expectedDate'] }, 1, 0],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalDelivered: { $sum: 1 },
+        onTimeDelivered: { $sum: '$onTime' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        onTimeRate: {
+          $cond: [
+            { $eq: ['$totalDelivered', 0] },
+            0,
+            {
+              $multiply: [
+                { $divide: ['$onTimeDelivered', '$totalDelivered'] },
+                100,
+              ],
+            },
+          ],
+        },
+      },
+    },
+  ]);
+
+  const onTimeRate = deliveredLoads[0]?.onTimeRate || 0;
+
+  // Update the driver document
+  const res = await Driver.findByIdAndUpdate(
+    driverId,
+    { onTimeRate },
+    { new: true },
+  );
 };

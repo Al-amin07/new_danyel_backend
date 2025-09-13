@@ -18,6 +18,11 @@ driverRoute.get(
   auth(userRole.admin, userRole.company, userRole.superAdmin),
   driverController.getSingleDriver,
 );
+driverRoute.get(
+  '/get-driverby-id/:id',
+  // auth(userRole.admin, userRole.company, userRole.superAdmin),
+  driverController.getSingleDriverByUserId,
+);
 
 driverRoute.patch(
   '/update-profile',
@@ -28,7 +33,7 @@ driverRoute.patch(
     { name: 'vehicleRegistration', maxCount: 1 },
     { name: 'profile', maxCount: 1 },
   ]),
-  // upload.single('profile'),
+  upload.single('profile'),
   (req, res, next) => {
     if (req?.body?.data) {
       req.body = JSON.parse(req.body?.data || {});
