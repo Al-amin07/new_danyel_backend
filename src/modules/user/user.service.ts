@@ -235,6 +235,7 @@ const getUserProfile = async (userId: string) => {
     })
       .populate('user', '-password')
       .populate('loads')
+      .populate('currentLoad')
       .populate('reviews.loadId');
     return driverProfile;
   } else {
