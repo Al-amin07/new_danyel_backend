@@ -14,7 +14,6 @@ import {
   ENotificationType,
   INotification,
 } from '../notification/notification.interface';
-import geocodeAddress from '../../util/generateGeoCode';
 import { getLatLon } from '../../util/getLayLon';
 
 const createLoadToDB = async (
@@ -182,6 +181,36 @@ const getAllLoad = async (id: string, query: Record<string, unknown>) => {
     result,
     meta,
   };
+};
+
+const getAllLoadsByDriver = async (
+  driverId: string,
+  query: Record<string, unknown>,
+) => {
+  if (!mongoose.Types.ObjectId.isValid(driverId)) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'Invalid driver ID');
+  }
+  const isDriverExist = await Driver.findOne({ user: driverId }).populate(
+    'user',
+  );
+  console.log({ isDriverExist });
+  const loadQuery = new QueryBuilder(
+    LoadModel.find({
+      loadStatus: 'Pending Assignment',
+      _id: { $nin: isDriverExist?.declinedLoads || [] },
+    }),
+    query,
+  );
+  const result = await loadQuery.modelQuery.populate({
+    path: 'companyId',
+    populate: { path: 'user', select: 'name email profileImage role _id' },
+  });
+  const meta = await loadQuery.getMetaData();
+  return {
+    result,
+    meta,
+  };
+  //
 };
 
 const getSingleLoad = async (id: string) => {
@@ -512,4 +541,5 @@ export const loadService = {
   updateLoadStatus,
   changedDriver,
   cancelLoadByDriver,
+  getAllLoadsByDriver,
 };

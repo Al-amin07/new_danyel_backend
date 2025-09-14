@@ -21,10 +21,11 @@ route.post(
   loadController.createLoad,
 );
 
+route.get('/', auth(userRole.company), loadController.getAllLoad);
 route.get(
-  '/',
-  auth(userRole.company, userRole.driver),
-  loadController.getAllLoad,
+  '/get-pending-loads',
+  auth(userRole.driver),
+  loadController.getAllLoadByDriver,
 );
 
 route.get('/generate-loadId', loadController.generateLoadId);

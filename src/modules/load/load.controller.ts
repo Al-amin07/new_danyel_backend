@@ -29,6 +29,18 @@ const getAllLoad = catchAsync(async (req, res) => {
     message: 'Loads  retrived successfully',
   });
 });
+const getAllLoadByDriver = catchAsync(async (req, res) => {
+  const query = req.query;
+  const { id } = req.user;
+  const result = await loadService.getAllLoadsByDriver(id, query);
+  sendResponse(res, {
+    data: result.result,
+    meta: result.meta,
+    success: true,
+    statusCode: 200,
+    message: 'Loads  retrived successfully',
+  });
+});
 const getSingleLoad = catchAsync(async (req, res) => {
   const { loadId } = req.params;
   const result = await loadService.getSingleLoad(loadId);
@@ -118,4 +130,5 @@ export const loadController = {
   updateLoadStatus,
   changeDriver,
   cancelLoadByDriverDriver,
+  getAllLoadByDriver,
 };
