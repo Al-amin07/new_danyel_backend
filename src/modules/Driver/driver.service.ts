@@ -457,6 +457,22 @@ const updatePhoto = async (id: string, file: Express.Multer.File) => {
   return result;
 };
 
+const declinedLoads = async (driverUserId: string, loadId: string) => {
+  console.log({ driverUserId, loadId });
+  const isDriverExist = await Driver.findOne({ user: driverUserId });
+  if (!isDriverExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'Driver not found');
+  }
+
+  const result = await Driver.findByIdAndUpdate(
+    isDriverExist?._id,
+    { $addToSet: { declinedLoads: loadId } },
+    { new: true },
+  );
+  console.log({ result });
+  return result;
+};
+
 export const driverService = {
   updateDriverProfileIntoDb,
   assignLoadToDriver,
@@ -468,6 +484,7 @@ export const driverService = {
   updatePhoto,
   getSingleDriver,
   getSingleDriverByUserId,
+  declinedLoads,
 };
 
 export const updateDriverOnTimeRate = async (driverId: string) => {

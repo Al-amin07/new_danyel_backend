@@ -18,6 +18,11 @@ driverRoute.get(
   auth(userRole.admin, userRole.company, userRole.superAdmin),
   driverController.getSingleDriver,
 );
+driverRoute.patch(
+  '/decline/:id',
+  auth(userRole.driver),
+  driverController.declinedLoads,
+);
 driverRoute.get(
   '/get-driverby-id/:id',
   // auth(userRole.admin, userRole.company, userRole.superAdmin),

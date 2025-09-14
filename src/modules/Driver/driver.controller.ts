@@ -139,6 +139,17 @@ const updateProfileImage = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
   });
 });
+const declinedLoads = catchAsync(async (req: Request, res: Response) => {
+  const id = (req.user as JwtPayload).id;
+  const loadId = req.params.id;
+  const result = await driverService.declinedLoads(id, loadId);
+  sendResponse(res, {
+    success: true,
+    message: 'load declined  successfully',
+    data: result,
+    statusCode: StatusCodes.OK,
+  });
+});
 
 export const driverController = {
   updateDriverProfile,
@@ -151,4 +162,5 @@ export const driverController = {
   updateProfileImage,
   getSingleDriver,
   getSingleDriverByUserId,
+  declinedLoads,
 };

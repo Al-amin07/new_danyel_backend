@@ -72,6 +72,7 @@ const DriverSchema = new Schema<IDriver>(
       SYSTEM_ALERT: { type: Boolean, default: true },
       COMMUNICATION: { type: Boolean, default: true },
     },
+    declinedLoads: [{ type: Schema.Types.ObjectId, ref: 'Load' }],
   },
   {
     timestamps: true,
