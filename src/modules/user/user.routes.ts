@@ -40,37 +40,25 @@ userRoutes.post(
 
 userRoutes.get(
   '/get-profile',
-  auth(userRole.admin, userRole.company, userRole.driver),
+  auth(userRole.admin, userRole.superAdmin, userRole.company, userRole.driver),
   userController.getUserProfile,
 );
-
-// userRoutes.patch(
-//   '/updateProfileData',
-//   auth(userRole.admin, userRole.company, userRole.driver),
-//   userController.updateProfileData,
-// );
-// userRoutes.delete(
-//   '/selfDistuct',
-//   auth(userRole.admin, userRole.company, userRole.driver),
-//   userController.selfDistuct,
-// );
-// // userRoutes.post(
-// //   '/uploadOrChangeImg',
-// //   auth(userRole.admin, userRole.company, userRole.driver),
-// //   upload.single('files'),
-// //   userController.uploadOrChangeImg,
-// // );
 
 // admin routes
 userRoutes.get(
   '/getAlluser',
-  auth(userRole.admin, userRole.company, userRole.driver),
+  auth(userRole.admin, userRole.superAdmin),
   userController.getAllUsers,
 );
-// userRoutes.delete(
-//   '/deleteSingleUser',
-//   auth(userRole.admin),
-//   userController.deleteSingleUser,
-// );
+userRoutes.delete(
+  '/delete-user/:id',
+  auth(userRole.admin, userRole.superAdmin),
+  userController.deleteUser,
+);
+userRoutes.patch(
+  '/block-user/:id',
+  auth(userRole.admin, userRole.superAdmin),
+  userController.blockUser,
+);
 
 export default userRoutes;

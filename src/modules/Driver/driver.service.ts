@@ -179,6 +179,10 @@ const assignLoadToDriver = async (id: string, loadId: string) => {
       'Driver profile not found. Please complete your driver profile first.',
     );
   }
+  if (isDriverExist.availability === 'On Duty' || isDriverExist?.currentLoad) {
+    throw new ApppError(StatusCodes.BAD_REQUEST, 'You are already on a load');
+  }
+
   const statusTimeline = {
     status: 'Assigned',
     timestamp: new Date(),
@@ -318,6 +322,10 @@ const updateLoadStatus = async (
       });
       // console.log({ sendNotification });
     } else if (payload?.status === 'Cancelled') {
+      await Driver.findByIdAndUpdate(isDriverExist?._id, {
+        $set: { currentLoad: null, availability: 'Available' },
+        $pull: { loads: payload?.loadId },
+      });
       await notificationService.sendNotification({
         content: `Load ${isLoadExist?.loadId} has been cancelled  by ${(isDriverExist?.user as any)?.name}`,
         type: ENotificationType.LOAD_STATUS_UPDATE,
@@ -540,7 +548,7 @@ export const updateDriverOnTimeRate = async (driverId: string) => {
   // Update the driver document
   const res = await Driver.findByIdAndUpdate(
     driverId,
-    { onTimeRate },
+    { onTimeRate, currentLoad: null, availability: 'Available' },
     { new: true },
   );
 };

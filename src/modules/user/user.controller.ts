@@ -50,14 +50,38 @@ const createSuperAdmin = catchAsync(async (req, res) => {
 });
 
 const getAllUsers = catchAsync(async (req, res) => {
-  const result = await userServices.getAllUsers();
+  const query = req.query;
+  const result = await userServices.getAllUsers(query);
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: StatusCodes.OK,
     success: true,
-    message: 'All users',
+    message: 'All users retrived successfully',
+    data: result.result,
+    meta: result.meta,
+  });
+});
+const blockUser = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await userServices.blockUser(id, req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'User status updated  successfully',
     data: result,
   });
 });
+const deleteUser = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await userServices.deleteUser(id, req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'User status updated  successfully',
+    data: result,
+  });
+});
+
 const getUserProfile = catchAsync(async (req, res) => {
   const { id } = req.user;
   const result = await userServices.getUserProfile(id);
@@ -69,96 +93,6 @@ const getUserProfile = catchAsync(async (req, res) => {
   });
 });
 
-// const updateProfileData = catchAsync(async (req, res) => {
-//   const user_id =
-//     typeof req.user.id === 'string' ? idConverter(req.user.id) : req.user.id;
-//   const payload = req.body;
-//   const result = await userServices.updateProfileData(user_id, payload);
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: 'profile updated',
-//     data: result,
-//   });
-// });
-
-// const deleteSingleUser = catchAsync(async (req, res) => {
-//   const user_id = req.query.user_id as string;
-//   const userIdConverted = idConverter(user_id);
-//   console.log(user_id, userIdConverted);
-//   if (!userIdConverted) {
-//     throw new Error('user id conversiopn failed');
-//   }
-//   const result = await userServices.deleteSingleUser(userIdConverted);
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: 'user deleted',
-//     data: result,
-//   });
-// });
-
-// const selfDistuct = catchAsync(async (req, res) => {
-//   const user_id = req.user.id;
-//   const userIdConverted = idConverter(user_id);
-//   if (!userIdConverted) {
-//     throw new Error('user id conversion failed');
-//   }
-//   const result = await userServices.selfDistuct(userIdConverted);
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: 'your account deletation successfull',
-//     data: result,
-//   });
-// });
-
-// const uploadOrChangeImg = catchAsync(async (req, res) => {
-//   const actionType = req.query.actionType as string; // Fixed typo in `actionType`
-//   const user_id = req.user.id;
-//   const imgFile = req.file;
-
-//   if (!user_id || !imgFile) {
-//     throw new Error('User ID and image file are required.');
-//   }
-
-//   // Ensure `idConverter` returns only the ObjectId
-//   const userIdConverted = idConverter(user_id);
-//   if (!(userIdConverted instanceof Types.ObjectId)) {
-//     throw new Error('User ID conversion failed');
-//   }
-
-//   // Call the service function to handle the upload
-//   const result = await userServices.uploadOrChangeImg(
-//     userIdConverted,
-//     imgFile as Express.Multer.File,
-//   );
-
-//   // Send response
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: `Your profile picture has been ${actionType || 'updated'}`,
-//     data: result,
-//   });
-// });
-
-// const getProfile = catchAsync(async (req, res) => {
-//   const user_id = req.user.id;
-//   const converted_user_id = idConverter(user_id);
-//   if (!converted_user_id) {
-//     throw Error('id conversation failed');
-//   }
-//   const result = await userServices.getProfile(converted_user_id);
-
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: 'your position retrived',
-//     data: result,
-//   });
-// });
-
 const userController = {
   createAdmin,
   createCompany,
@@ -166,11 +100,8 @@ const userController = {
   getAllUsers,
   getUserProfile,
   createSuperAdmin,
-  // updateProfileData,
-  // deleteSingleUser,
-  // selfDistuct,
-  // // uploadOrChangeImg,
-  // getProfile,
+  blockUser,
+  deleteUser,
 };
 
 export default userController;

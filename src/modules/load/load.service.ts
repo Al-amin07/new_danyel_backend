@@ -143,12 +143,8 @@ const createLoadToDB = async (
   }
 };
 
-const getAllLoad = async (id: string, query: Record<string, unknown>) => {
-  const isCompanyExist = await Company.findOne({ user: id });
-  const loadQuery = new QueryBuilder(
-    LoadModel.find({ companyId: isCompanyExist?._id }),
-    query,
-  )
+const getAllLoad = async (query: Record<string, unknown>) => {
+  const loadQuery = new QueryBuilder(LoadModel.find(), query)
     .search([
       'loadId',
       'loadType',

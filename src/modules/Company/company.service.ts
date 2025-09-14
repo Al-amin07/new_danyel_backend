@@ -98,7 +98,7 @@ const getAllCompanyLoad = async (
   const isCompanyExist = await Company.findOne({ user: userId })
     .populate('loads')
     .select('-password');
-  console.log({ isCompanyExist });
+  // console.log({ isCompanyExist });
   if (!isCompanyExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found');
   }

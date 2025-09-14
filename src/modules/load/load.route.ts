@@ -21,7 +21,11 @@ route.post(
   loadController.createLoad,
 );
 
-route.get('/', auth(userRole.company), loadController.getAllLoad);
+route.get(
+  '/',
+  auth(userRole.company, userRole.admin, userRole.superAdmin),
+  loadController.getAllLoad,
+);
 route.get(
   '/get-pending-loads',
   auth(userRole.driver),

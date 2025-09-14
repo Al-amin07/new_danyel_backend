@@ -8,6 +8,7 @@ import { loadRoute } from '../modules/load/load.route';
 import { supportRoute } from '../modules/support/support.route';
 import { messageRoute } from '../modules/message/message.route';
 import { notificationRoute } from '../modules/notification/notification.route';
+import { adminRoutes } from '../modules/admin/admin.route';
 
 const Routes = express.Router();
 // Array of module routes
@@ -15,6 +16,10 @@ const moduleRouts = [
   {
     path: '/auth',
     router: authRouter,
+  },
+  {
+    path: '/admin',
+    router: adminRoutes,
   },
   {
     path: '/users',

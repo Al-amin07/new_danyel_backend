@@ -15,6 +15,7 @@ import { generateOtp } from '../../util/generateOtp';
 import { TUser } from './user.interface';
 import config from '../../config';
 import authUtil from '../auth/auth.utill';
+import QueryBuilder from '../../builder/QueryBuilder';
 
 const createAdminToDB = async (
   payload: TUser,
@@ -212,9 +213,18 @@ const createSuperAdmin = async (payload: TUser) => {
   );
   return { accessToken };
 };
-const getAllUsers = async () => {
-  const result = await User.find();
-  return result;
+const getAllUsers = async (query: Record<string, unknown>) => {
+  const userQuery = new QueryBuilder(User.find().select('-password'), query)
+    .search(['name', 'email', 'phone', 'role'])
+    .filter()
+    .sort()
+    .paginate();
+  const result = await userQuery.modelQuery;
+  const meta = await userQuery.getMetaData();
+  return {
+    result,
+    meta,
+  };
 };
 
 const getUserProfile = async (userId: string) => {
@@ -243,6 +253,33 @@ const getUserProfile = async (userId: string) => {
   }
 };
 
+const blockUser = async (userId: string, payload: { isBlocked: boolean }) => {
+  console.log({ userId, payload });
+  const isUserExist = await User.findById(userId).select('-password');
+  if (!isUserExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  const result = await User.findByIdAndUpdate(
+    userId,
+    { isBlocked: payload?.isBlocked },
+    { new: true },
+  ).select('-password');
+  return result;
+};
+const deleteUser = async (userId: string, payload: { isDeleted: boolean }) => {
+  console.log({ userId, payload });
+  const isUserExist = await User.findById(userId).select('-password');
+  if (!isUserExist) {
+    throw new ApppError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  const result = await User.findByIdAndUpdate(
+    userId,
+    { isDeleted: payload?.isDeleted },
+    { new: true },
+  ).select('-password');
+  return result;
+};
+
 const userServices = {
   createAdminToDB,
   createCompanyToDB,
@@ -250,11 +287,8 @@ const userServices = {
   getAllUsers,
   getUserProfile,
   createSuperAdmin,
-  // updateProfileData,
-  // deleteSingleUser,
-  // selfDistuct,
-  // uploadOrChangeImg,
-  // getProfile,
+  deleteUser,
+  blockUser,
 };
 
 export default userServices;
