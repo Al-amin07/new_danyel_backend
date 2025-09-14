@@ -16,6 +16,10 @@ const AddressSchema = new Schema<IAddress>({
   state: { type: String, required: true },
   zipCode: { type: Number, required: true },
   country: { type: String, required: true },
+  location: {
+    lat: { type: Number },
+    lng: { type: Number },
+  },
 });
 
 const statusSchema = new Schema<IStatusTimeline>(

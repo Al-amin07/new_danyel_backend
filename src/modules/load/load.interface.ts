@@ -9,6 +9,10 @@ export interface IAddress {
   state: string;
   zipCode: number;
   country: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface IDocument {

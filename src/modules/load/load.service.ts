@@ -15,6 +15,7 @@ import {
   INotification,
 } from '../notification/notification.interface';
 import geocodeAddress from '../../util/generateGeoCode';
+import { getLatLon } from '../../util/getLayLon';
 
 const createLoadToDB = async (
   userId: string,
@@ -45,15 +46,33 @@ const createLoadToDB = async (
     content: `New load assigned by : ${isCompanyExist?.companyName}`,
   };
 
-  // const pickupStr = `${payload?.pickupAddress.street}, ${payload?.pickupAddress.city}, ${payload?.pickupAddress.state} ${payload?.pickupAddress.zipCode}, ${payload?.pickupAddress.country}`;
-  // const deliveryStr = `${payload?.deliveryAddress.street}, ${payload?.deliveryAddress.city}, ${payload?.deliveryAddress.state} ${payload?.deliveryAddress.zipCode}, ${payload?.deliveryAddress.country}`;
+  const deliveryStr = `${payload?.deliveryAddress?.street + ', ' + payload?.deliveryAddress?.city + ', ' + payload?.deliveryAddress?.state + ' ' + payload?.deliveryAddress?.zipCode + ', ' + payload?.deliveryAddress?.country}`;
+  const pickupStr = `${payload?.pickupAddress?.street + ', ' + payload?.pickupAddress?.city + ', ' + payload?.pickupAddress?.state + ' ' + payload?.pickupAddress?.zipCode + ', ' + payload?.pickupAddress?.country}`;
 
-  // const [p, d] = await Promise.all([
-  //   geocodeAddress(pickupStr),
-  //   geocodeAddress(deliveryStr),
-  // ]);
+  const pickLocation = await getLatLon(pickupStr);
+  if (!pickLocation) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to fetch pickup location coordinates. Please check the address.',
+    );
+  }
 
-  // return { p, d };
+  const delivaryLocation = await getLatLon(deliveryStr);
+  if (!delivaryLocation) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'Failed to fetch delivary location coordinates. Please check the address.',
+    );
+  }
+  payload.pickupAddress.location = {
+    lat: parseFloat(pickLocation.lat),
+    lng: parseFloat(pickLocation.lon),
+  };
+
+  payload.deliveryAddress.location = {
+    lat: parseFloat(delivaryLocation.lat),
+    lng: parseFloat(delivaryLocation.lon),
+  };
 
   const documents = files.map((file) => ({
     type: file?.mimetype,
