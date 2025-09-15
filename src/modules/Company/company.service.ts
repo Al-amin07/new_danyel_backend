@@ -11,7 +11,6 @@ import { ENotificationType } from '../notification/notification.interface';
 import { ILoad } from '../load/load.interface';
 import { User } from '../user/user.model';
 import { Driver } from '../Driver/driver.model';
-import { EAvailability } from '../Driver/driver.interface';
 
 const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
   const companyQuery = new QueryBuilder(Company.find(), query)
@@ -97,19 +96,24 @@ const getAllCompanyLoad = async (
   userId: string,
   query: Record<string, unknown>,
 ) => {
-  const isCompanyExist = await Company.findOne({ user: userId })
-    .populate('loads')
-    .select('-password');
+  const isCompanyExist = await Company.findOne({ user: userId }).populate(
+    'loads',
+  );
+
   // console.log({ isCompanyExist });
   if (!isCompanyExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Company not found');
   }
 
-  const loadQuery = new QueryBuilder(LoadModel.find(), query)
+  const loadQuery = new QueryBuilder(
+    LoadModel.find({ companyId: isCompanyExist?.id }),
+    query,
+  )
     .search([
       'loadId',
       'loadType',
       'loadStatus',
+      'paymentStatus',
       'pickupAddress.street',
       'pickupAddress.city',
       'pickupAddress.apartment',
