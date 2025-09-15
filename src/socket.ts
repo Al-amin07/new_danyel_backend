@@ -1,7 +1,6 @@
 // src/socket.ts
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-import { Message } from './modules/message/message.model';
 
 let io: SocketIOServer;
 
