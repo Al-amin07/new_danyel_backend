@@ -8,7 +8,7 @@ import { StatusCodes } from 'http-status-codes';
 const updateDriverProfile = catchAsync(async (req: Request, res: Response) => {
   const id = (req.user as JwtPayload).id;
   const data = req.body;
-  const file = req.file;
+  // const file = req.file;
   const files = req.files as {
     [fieldname: string]: Express.Multer.File[];
   };
@@ -18,7 +18,7 @@ const updateDriverProfile = catchAsync(async (req: Request, res: Response) => {
     data,
 
     files,
-    file as Express.Multer.File,
+    // file as Express.Multer.File,
   );
   sendResponse(res, {
     success: true,
@@ -150,6 +150,15 @@ const declinedLoads = catchAsync(async (req: Request, res: Response) => {
     statusCode: StatusCodes.OK,
   });
 });
+const suggestedDriver = catchAsync(async (req: Request, res: Response) => {
+  const result = await driverService.suggestedDriver();
+  sendResponse(res, {
+    success: true,
+    message: 'Drivers retrived  successfully',
+    data: result,
+    statusCode: StatusCodes.OK,
+  });
+});
 
 export const driverController = {
   updateDriverProfile,
@@ -163,4 +172,5 @@ export const driverController = {
   getSingleDriver,
   getSingleDriverByUserId,
   declinedLoads,
+  suggestedDriver,
 };

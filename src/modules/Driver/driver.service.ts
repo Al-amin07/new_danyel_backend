@@ -6,7 +6,7 @@ import { LoadModel } from '../load/load.model';
 import mongoose, { Types } from 'mongoose';
 import ApppError from '../../error/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { IReview } from './driver.interface';
+import { EAvailability, IReview } from './driver.interface';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { ILoad, IStatusTimeline } from '../load/load.interface';
 import { getLoadNote } from '../load/load.constant';
@@ -53,7 +53,8 @@ const getSingleDriver = async (id: string) => {
     .populate({
       path: 'loads',
       populate: { path: 'companyId' },
-    });
+    })
+    .populate('currentLoad');
 
   return result;
 };
@@ -77,11 +78,11 @@ const updateDriverProfileIntoDb = async (
   payload: any,
 
   files: { [fieldname: string]: Express.Multer.File[] } | undefined,
-  file: Express.Multer.File,
+  // file: Express.Multer.File,
 ) => {
   const folder = 'uploads/drivers';
   const { location, loads, name, ...restDriverData } = payload;
-
+  console.log({ payload, files });
   if (!fs.existsSync(folder)) {
     fs.mkdirSync(folder, { recursive: true });
   }
@@ -122,16 +123,6 @@ const updateDriverProfileIntoDb = async (
       };
     }
   }
-  if (file) {
-    const profileImage = `${config.server_url}/uploads/${file?.filename}`;
-    const updateUser = await User.findByIdAndUpdate(
-      id,
-      { profileImage },
-      { new: true },
-    );
-    console.log({ updateUser });
-  }
-
   // console.log({ updateData });
   if (location) {
     (Object.keys(location) as (keyof {})[]).forEach((key) => {
@@ -347,6 +338,12 @@ const updateLoadStatus = async (
 };
 
 const reviewDriver = async (id: string, payload: IReview, userId: string) => {
+  if (payload?.rating < 1 || payload?.rating > 5) {
+    throw new ApppError(
+      StatusCodes.BAD_REQUEST,
+      'Rating must be between 1 and 5',
+    );
+  }
   const isDriverExist = await Driver.findById(id).populate('user');
   if (!isDriverExist) {
     throw new ApppError(StatusCodes.NOT_FOUND, 'Driver not found');
@@ -481,6 +478,41 @@ const declinedLoads = async (driverUserId: string, loadId: string) => {
   return result;
 };
 
+const suggestedDriver = async () => {
+  const drivers = await Driver.find({
+    availability: EAvailability.AVAILABLE,
+    status: true,
+    currentLoad: null,
+  })
+    .populate('loads')
+    .populate('user')
+    .lean();
+
+  if (!drivers.length) return [];
+
+  // Scoring weights
+  const WEIGHTS = {
+    rating: 0.5, // 50% importance
+    onTime: 0.5, // 50% importance
+  };
+
+  // Normalize and score drivers
+  const scoredDrivers = drivers.map((driver: any) => {
+    const ratingScore = (driver.averageRating || 0) / 5; // normalize to 0-1
+    const onTimeScore = (driver.onTimeRate || 0) / 100; // assuming it's percentage
+
+    const score = ratingScore * WEIGHTS.rating + onTimeScore * WEIGHTS.onTime;
+
+    return { ...driver, score };
+  });
+
+  // Sort by best score
+  scoredDrivers.sort((a, b) => b.score - a.score);
+
+  // Return top 3 drivers
+  return scoredDrivers.slice(0, 3);
+};
+
 export const driverService = {
   updateDriverProfileIntoDb,
   assignLoadToDriver,
@@ -493,6 +525,7 @@ export const driverService = {
   getSingleDriver,
   getSingleDriverByUserId,
   declinedLoads,
+  suggestedDriver,
 };
 
 export const updateDriverOnTimeRate = async (driverId: string) => {

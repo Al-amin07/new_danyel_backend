@@ -10,6 +10,8 @@ import mongoose, { Types } from 'mongoose';
 import { ENotificationType } from '../notification/notification.interface';
 import { ILoad } from '../load/load.interface';
 import { User } from '../user/user.model';
+import { Driver } from '../Driver/driver.model';
+import { EAvailability } from '../Driver/driver.interface';
 
 const getAllCompanyFromDb = async (query: Record<string, unknown>) => {
   const companyQuery = new QueryBuilder(Company.find(), query)
@@ -159,11 +161,37 @@ const companyStat = async (id: string) => {
     { $unwind: '$driver' },
   ]);
 
+  const drivers = await Driver.find({})
+    .populate('loads')
+    .populate('user')
+    .lean();
+
+  if (!drivers.length) return [];
+
+  // Scoring weights
+  const WEIGHTS = {
+    rating: 0.5, // 50% importance
+    onTime: 0.5, // 50% importance
+  };
+
+  // Normalize and score drivers
+  const scoredDrivers = drivers.map((driver: any) => {
+    const ratingScore = (driver.averageRating || 0) / 5; // normalize to 0-1
+    const onTimeScore = (driver.onTimeRate || 0) / 100; // assuming it's percentage
+
+    const score = ratingScore * WEIGHTS.rating + onTimeScore * WEIGHTS.onTime;
+
+    return { ...driver, score };
+  });
+
+  // Sort by best score
+  scoredDrivers.sort((a: any, b: any) => b.score - a.score);
+
   return {
     totalLoads: allLoads.length,
     activeLoads,
     unassignedLoads,
-
+    topDrivers: scoredDrivers.slice(0, 3),
     totalAmount,
     totalDriver: totalDriver.map((d) => d.driver)?.length,
   };
@@ -187,17 +215,6 @@ const getCompanyEarning = async (id: string) => {
 
   const sixMonthsAgo = new Date(now);
   sixMonthsAgo.setMonth(now.getMonth() - 6);
-  const loads = await LoadModel.find({ companyId: isCompanyExist._id });
-  // console.log({ loads });
-  // const test = await LoadModel.aggregate([
-  //   {
-  //     $match: { companyId: isCompanyExist?.id },
-  //   },
-  //   { $limit: 5 },
-  // ]);
-
-  // return test;
-  // console.log(test);
 
   const results = await LoadModel.aggregate([
     {

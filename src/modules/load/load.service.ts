@@ -326,13 +326,13 @@ const assignDriver = async (loadId: string, payload: { driverId: string }) => {
   if (!isDriverExist) {
     throw new ApppError(404, 'Driver not found');
   }
-  // if (
-  //   isDriverExist?.loads &&
-  //   isDriverExist.loads.length > 0 &&
-  //   isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
-  // ) {
-  //   throw new ApppError(400, 'This load is already assigned to this driver');
-  // }
+  if (
+    isDriverExist?.loads &&
+    isDriverExist.loads.length > 0 &&
+    isDriverExist.loads.some((id: mongoose.Types.ObjectId) => id.equals(loadId))
+  ) {
+    throw new ApppError(400, 'This load is already assigned to this driver');
+  }
 
   const statusTimeline = {
     status: 'Assigned',
